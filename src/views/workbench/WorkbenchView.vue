@@ -21,11 +21,11 @@ const today = computed(() => {
 })
 
 const modules = [
-  { key: 'hr', title: 'HR 人事', desc: '员工/部门/考勤', icon: 'IconUserGroup', color: '#1677ff' },
-  { key: 'edu', title: '教务选课', desc: '课程/选课/成绩', icon: 'IconBook', color: '#00b42a' },
-  { key: 'oj', title: 'OJ 判题', desc: '题库/提交/排名', icon: 'IconCode', color: '#ff7d00' },
-  { key: 'mall', title: '电商商城', desc: '商品/订单/秒杀', icon: 'IconShoppingCart', color: '#f53f3f' },
-  { key: 'ai', title: 'AI 智能体', desc: 'RAG 文档问答', icon: 'IconRobot', color: '#722ed1' },
+  { key: 'hr', title: 'HR 人事', desc: '员工/部门/考勤', icon: 'IconUserGroup', color: '#1E3A8A' },
+  { key: 'edu', title: '教务选课', desc: '课程/选课/成绩', icon: 'IconBook', color: '#00B42A' },
+  { key: 'oj', title: 'OJ 判题', desc: '题库/提交/排名', icon: 'IconCode', color: '#FF7D00' },
+  { key: 'mall', title: '电商商城', desc: '商品/订单/秒杀', icon: 'IconShoppingCart', color: '#F53F3F' },
+  { key: 'ai', title: 'AI 智能体', desc: 'RAG 文档问答', icon: 'IconRobot', color: '#722ED1' },
 ] as const
 
 function handleModuleClick(key: string) {
@@ -39,49 +39,76 @@ const nickname = computed(() => userStore.userInfo?.nickname || userStore.userIn
 <template>
   <div class="workbench">
     <!-- 欢迎卡 -->
-    <a-card class="welcome-card" :bordered="false">
+    <div class="welcome-card">
       <div class="welcome-content">
         <div class="welcome-left">
-          <h2>{{ greeting }}，{{ nickname }} 👋</h2>
+          <h2>{{ greeting }}，{{ nickname }}</h2>
           <p>欢迎使用 AURORA 一体化后台平台 · 当前角色：{{ roleLabel }}</p>
         </div>
-        <div class="welcome-right">{{ today }}</div>
+        <div class="welcome-right">
+          <icon-calendar :size="16" style="color: rgba(255,255,255,0.7)" />
+          <span>{{ today }}</span>
+        </div>
       </div>
-    </a-card>
+    </div>
 
     <!-- 快捷入口 -->
-    <a-card class="section-card" title="🚀 快捷入口" :bordered="false">
-      <a-grid :cols="{ xs: 2, sm: 3, md: 5 }" :col-gap="14" :row-gap="14">
-        <a-grid-item v-for="m in modules" :key="m.key">
-          <div class="module-card" @click="handleModuleClick(m.key)">
-            <div class="module-icon" :style="{ background: m.color }">
-              <component :is="m.icon" />
-            </div>
+    <a-card class="section-card" title="快捷入口">
+      <div class="module-grid">
+        <div
+          v-for="m in modules"
+          :key="m.key"
+          class="module-card"
+          @click="handleModuleClick(m.key)"
+        >
+          <div class="module-icon" :style="{ background: m.color + '14', color: m.color }">
+            <component :is="m.icon" :size="22" />
+          </div>
+          <div class="module-info">
             <div class="module-title">{{ m.title }}</div>
             <div class="module-desc">{{ m.desc }}</div>
           </div>
-        </a-grid-item>
-      </a-grid>
+          <icon-right :size="14" class="module-arrow" />
+        </div>
+      </div>
     </a-card>
 
     <!-- 系统状态 + 公告 -->
-    <a-row :gutter="14">
+    <a-row :gutter="24">
       <a-col :span="12">
-        <a-card class="section-card" title="📊 系统状态" :bordered="false">
-          <ul class="status-list">
-            <li><span>后端服务</span><a-tag color="green" size="small">在线</a-tag></li>
-            <li><span>数据库连接</span><a-tag color="green" size="small">在线</a-tag></li>
-            <li><span>Redis 连接</span><a-tag color="green" size="small">在线</a-tag></li>
-          </ul>
+        <a-card class="section-card" title="系统状态">
+          <div class="status-list">
+            <div class="status-item">
+              <span class="status-label">后端服务</span>
+              <a-tag color="green" size="small">在线</a-tag>
+            </div>
+            <div class="status-item">
+              <span class="status-label">数据库连接</span>
+              <a-tag color="green" size="small">在线</a-tag>
+            </div>
+            <div class="status-item">
+              <span class="status-label">Redis 连接</span>
+              <a-tag color="green" size="small">在线</a-tag>
+            </div>
+          </div>
         </a-card>
       </a-col>
       <a-col :span="12">
-        <a-card class="section-card" title="📢 系统公告" :bordered="false">
-          <ul class="notice-list">
-            <li>AURORA v1.0 毕设版</li>
-            <li>当前阶段：Phase 1 鉴权 + 用户管理</li>
-            <li>暂无新公告</li>
-          </ul>
+        <a-card class="section-card" title="系统公告">
+          <div class="notice-list">
+            <div class="notice-item">
+              <span class="notice-dot"></span>
+              <span>AURORA v1.0 毕设版</span>
+            </div>
+            <div class="notice-item">
+              <span class="notice-dot"></span>
+              <span>当前阶段：Phase 1 鉴权 + 用户管理</span>
+            </div>
+            <div class="notice-item">
+              <span class="notice-dot"></span>
+              <span>暂无新公告</span>
+            </div>
+          </div>
         </a-card>
       </a-col>
     </a-row>
@@ -92,12 +119,14 @@ const nickname = computed(() => userStore.userInfo?.nickname || userStore.userIn
 .workbench {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 24px;
 }
 
+/* === 欢迎卡 === */
 .welcome-card {
-  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
-  color: #ffffff;
+  background: #1E3A8A;
+  border-radius: 8px;
+  padding: 24px 32px;
 }
 
 .welcome-content {
@@ -107,44 +136,50 @@ const nickname = computed(() => userStore.userInfo?.nickname || userStore.userIn
 }
 
 .welcome-left h2 {
-  margin: 0 0 6px;
-  font-size: 22px;
+  margin: 0 0 8px;
+  font-size: 20px;
   font-weight: 600;
-  color: #ffffff;
+  color: #FFFFFF;
 }
 
 .welcome-left p {
   margin: 0;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .welcome-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.section-card {
-  margin-top: 0;
+/* === 快捷入口模块卡片 === */
+.module-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .module-card {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 18px 10px;
-  border-radius: 6px;
-  border: 1px solid #e5e6eb;
-  background: #fafbfc;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid #E5E6EB;
+  background: #FFFFFF;
   cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
+  transition: all 0.15s ease;
 }
 
 .module-card:hover {
-  border-color: #1677ff;
-  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.15);
-  transform: translateY(-2px);
+  border-color: #1E3A8A;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .module-icon {
@@ -154,47 +189,100 @@ const nickname = computed(() => userStore.userInfo?.nickname || userStore.userIn
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  color: #ffffff;
-  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.module-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .module-title {
   font-size: 14px;
   font-weight: 500;
-  color: #1d2129;
+  color: #1F2329;
 }
 
 .module-desc {
   margin-top: 2px;
   font-size: 12px;
-  color: #86909c;
+  color: #86909C;
 }
 
-.status-list,
-.notice-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.module-arrow {
+  color: #C9CDD4;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
 }
 
-.status-list li {
+.module-card:hover .module-arrow {
+  color: #1E3A8A;
+}
+
+/* === 系统状态 === */
+.status-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
-  font-size: 13px;
-  color: #4e5969;
+  padding: 10px 0;
+  border-bottom: 1px solid #F2F3F5;
 }
 
-.notice-list li {
-  padding: 6px 0;
-  font-size: 13px;
-  color: #4e5969;
-  border-bottom: 1px dashed #e5e6eb;
-}
-
-.notice-list li:last-child {
+.status-item:last-child {
   border-bottom: none;
+}
+
+.status-label {
+  font-size: 14px;
+  color: #4E5969;
+}
+
+/* === 系统公告 === */
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notice-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #4E5969;
+  border-bottom: 1px solid #F2F3F5;
+}
+
+.notice-item:last-child {
+  border-bottom: none;
+}
+
+.notice-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1E3A8A;
+  flex-shrink: 0;
+}
+
+/* === 卡片通用覆盖 === */
+.section-card :deep(.arco-card-header) {
+  padding: 16px 24px;
+}
+
+.section-card :deep(.arco-card-header-title) {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1F2329;
+}
+
+.section-card :deep(.arco-card-body) {
+  padding: 16px 24px;
 }
 </style>

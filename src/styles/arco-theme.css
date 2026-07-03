@@ -1,0 +1,36 @@
+/* ============================================
+   AURORA — Arco Design Vue Token 覆盖
+   将 Arco 默认主题从钉钉蓝调整为飞书蓝
+   基于 Style Guide V1.0 §8.1
+   ============================================ */
+
+:root {
+  /* === 主色覆盖 === */
+  /* Arco 默认 --primary-6 = 27, 93, 255 (#165DFF 钉钉蓝) */
+  /* 覆盖为 30, 58, 138 (#1E3A8A 深海蓝) */
+  --primary-1: 239, 246, 255;
+  --primary-2: 219, 234, 254;
+  --primary-3: 147, 197, 253;
+  --primary-4: 96, 165, 250;
+  --primary-5: 59, 130, 246;
+  --primary-6: 30, 58, 138;        /* 主色：深海蓝 #1E3A8A */
+  --primary-7: 23, 37, 84;         /* hover #172554 */
+  --primary-8: 15, 29, 69;         /* active #0F1D45 */
+  --primary-9: 10, 20, 50;
+  --primary-10: 5, 10, 30;
+
+  /* === 字体族覆盖 === */
+  --font-family: 'Inter', 'PingFang SC', 'Noto Sans SC',
+                 'Microsoft YaHei', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* === 圆角覆盖 === */
+  --border-radius-small: 4px;
+  --border-radius-medium: 6px;     /* 按钮、输入框 */
+  --border-radius-large: 8px;      /* 卡片 */
+}
+
+/* Arco 状态色默认就是飞书色，无需覆盖 */
+/* --success-6: 0, 180, 42;     #00B42A */
+/* --warning-6: 255, 125, 0;    #FF7D00 */
+/* --danger-6:   245, 63, 63;   #F53F3F */

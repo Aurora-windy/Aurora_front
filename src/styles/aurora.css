@@ -1,0 +1,92 @@
+/* ============================================
+   AURORA — 极光装饰工具类
+   仅用于白名单场景：登录 Hero / AI 悬浮球 / 加载条 / 关于页
+   基于 Style Guide V1.0 §6
+   ============================================ */
+
+/* 极光渐变背景 */
+.aurora-gradient {
+  background: linear-gradient(
+    90deg,
+    #FFD700 0%,
+    #FFA500 25%,
+    #32CD32 50%,
+    #14B8A6 75%,
+    #87CEFA 100%
+  );
+}
+
+/* 极光渐变文字（用于 Hero 标题） */
+.aurora-text {
+  background: linear-gradient(
+    90deg,
+    #FFD700 0%,
+    #FFA500 25%,
+    #32CD32 50%,
+    #14B8A6 75%,
+    #87CEFA 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 极光光晕 */
+.aurora-glow {
+  box-shadow: 0 0 24px rgba(51, 112, 255, 0.4),
+              0 0 48px rgba(20, 184, 166, 0.2);
+}
+
+/* 极光加载点动画 */
+.aurora-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.aurora-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: aurora-bounce 1.4s infinite ease-in-out both;
+}
+
+.aurora-dots span:nth-child(1) {
+  background: #FFD700;
+  animation-delay: -0.32s;
+}
+
+.aurora-dots span:nth-child(2) {
+  background: #32CD32;
+  animation-delay: -0.16s;
+}
+
+.aurora-dots span:nth-child(3) {
+  background: #87CEFA;
+}
+
+@keyframes aurora-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* NProgress 极光进度条 */
+#nprogress .bar {
+  background: linear-gradient(
+    90deg,
+    #FFD700 0%,
+    #FFA500 25%,
+    #32CD32 50%,
+    #14B8A6 75%,
+    #87CEFA 100%
+  ) !important;
+  height: 2px !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #3370FF, 0 0 5px #14B8A6 !important;
+}

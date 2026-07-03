@@ -1,0 +1,212 @@
+/* ============================================
+   AURORA — 全局基础样式 + Arco 组件覆盖
+   基于 Style Guide V1.0 §8.2
+   ============================================ */
+
+/* --- 全局基础 --- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body, #app {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #FAFAFA;
+  color: #1F2329;
+  font-family: var(--font-family);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 500;
+  color: #1F2329;
+  margin: 0;
+}
+
+a {
+  color: #1E3A8A;
+  text-decoration: none;
+}
+a:hover {
+  color: #172554;
+}
+
+/* --- 卡片 Card --- */
+.arco-card {
+  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.arco-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.arco-card-header {
+  border-bottom: 1px solid #F2F3F5;
+  padding: 16px 24px;
+}
+
+.arco-card-header-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1F2329;
+}
+
+.arco-card-body {
+  padding: 16px 24px;
+}
+
+/* --- 表格 Table --- */
+.arco-table-th {
+  background: #FAFAFA !important;
+  font-weight: 500 !important;
+  color: #1F2329 !important;
+}
+
+.arco-table-td {
+  height: 48px;
+}
+
+.arco-table-tr:hover .arco-table-td {
+  background: #F7F8FA !important;
+}
+
+.arco-table-tr-checked .arco-table-td {
+  background: #E8F0FF !important;
+}
+
+/* --- 按钮 Button --- */
+.arco-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* --- 输入框 Input --- */
+.arco-input-wrapper,
+.arco-select-view,
+.arco-textarea {
+  border-radius: 6px;
+  border: 1px solid #E5E6EB;
+  background: #FFFFFF;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* 去掉内部 input 的边框，只保留 wrapper 的边框 */
+.arco-input {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.arco-input-wrapper:hover,
+.arco-select-view:hover {
+  border-color: #C9CDD4;
+}
+
+.arco-input-wrapper.arco-input-focus,
+.arco-select-view.arco-select-view-focus {
+  border-color: #1E3A8A !important;
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2) !important;
+}
+
+/* --- 弹窗 Modal --- */
+.arco-modal {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.arco-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2329;
+}
+
+/* --- 侧边栏菜单 Menu --- */
+.arco-menu-light .arco-menu-item {
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.arco-menu-light .arco-menu-item:hover {
+  background: #F7F8FA;
+  color: #1F2329;
+}
+
+.arco-menu-light .arco-menu-item-selected {
+  background: #E8F0FF;
+  color: #1E3A8A;
+  font-weight: 500;
+}
+
+.arco-menu-light .arco-menu-item-selected::before {
+  background: #1E3A8A;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+}
+
+/* --- Tag 标签 --- */
+.arco-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  height: 24px;
+  line-height: 22px;
+}
+
+/* --- 表单 Form --- */
+.arco-form-item-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: #4E5969;
+}
+
+/* --- 滚动条 --- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C9CDD4;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #86909C;
+}
+
+/* --- 选中态 --- */
+::selection {
+  background: #1E3A8A;
+  color: #FFFFFF;
+}
+
+/* --- 焦点环（排除 Arco 组件，避免与组件自带 focus 样式冲突） --- */
+*:focus-visible:not(.arco-input):not(.arco-input-wrapper):not(.arco-select-view):not(.arco-btn):not(.arco-textarea) {
+  outline: 2px solid rgba(51, 112, 255, 0.4);
+  outline-offset: 2px;
+}
+
+/* --- Reduced motion --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
