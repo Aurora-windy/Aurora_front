@@ -1,52 +1,63 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
+import { useUserStore } from '../stores/user'
+import { Message } from '@arco-design/web-vue'
 
 const appStore = useAppStore()
+const userStore = useUserStore()
 const route = useRoute()
+const router = useRouter()
 
-const activeMenu = computed(() => {
-  return route.path
-})
+const activeMenu = computed(() => route.path)
+
+async function handleLogout() {
+  await userStore.logout()
+  Message.success('已退出登录')
+  router.push('/login')
+}
 </script>
 
 <template>
-  <el-container class="admin-layout">
-    <el-aside class="admin-aside" :width="appStore.sidebarCollapsed ? '72px' : '220px'">
+  <a-layout class="admin-layout">
+    <a-layout-sider class="admin-aside" :width="appStore.sidebarCollapsed ? 72 : 220" :collapsed="appStore.sidebarCollapsed">
       <div class="brand">AURORA</div>
-      <el-menu
-        :default-active="activeMenu"
-        :collapse="appStore.sidebarCollapsed"
-        background-color="#ffffff"
-        text-color="#1f2937"
-        active-text-color="#1677ff"
-        router
+      <a-menu
+        :selected-keys="[activeMenu]"
+        :default-selected-keys="['/workbench']"
+        :style="{ width: '100%' }"
+        @menu-item-click="(key: string) => router.push(key)"
       >
-        <el-menu-item index="/dashboard">首页看板</el-menu-item>
-        <el-menu-item index="/users">用户管理</el-menu-item>
-        <el-menu-item index="/settings">系统设置</el-menu-item>
-      </el-menu>
-    </el-aside>
+        <a-menu-item key="/workbench">工作台</a-menu-item>
+      </a-menu>
+    </a-layout-sider>
 
-    <el-container>
-      <el-header class="admin-header">
+    <a-layout>
+      <a-layout-header class="admin-header">
         <div class="header-left">
-          <el-button text @click="appStore.toggleSidebar()">
-            {{ appStore.sidebarCollapsed ? '展开菜单' : '收起菜单' }}
-          </el-button>
+          <a-button shape="circle" @click="appStore.toggleSidebar()">
+            {{ appStore.sidebarCollapsed ? '>' : '<' }}
+          </a-button>
         </div>
-        <!-- <div class="header-right">
-          <el-tag type="primary" effect="light">企业管理后台</el-tag>
-          <el-avatar :size="32">A</el-avatar>
-        </div> -->
-      </el-header>
+        <div class="header-right">
+          <a-dropdown>
+            <a-space style="cursor: pointer">
+              <a-avatar :size="32">{{ userStore.userInfo?.nickname?.charAt(0) || 'A' }}</a-avatar>
+              <span>{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '未登录' }}</span>
+            </a-space>
+            <template #content>
+              <a-doption @click="handleLogout">退出登录</a-doption>
+            </template>
+          </a-dropdown>
+        </div>
+      </a-layout-header>
 
-      <el-main class="admin-main">
+      <a-layout-content class="admin-main">
         <RouterView />
-      </el-main>
-    </el-container>
-  </el-container>
+      </a-layout-content>
+    </a-layout>
+  </a-layout>
 </template>
 
 <style scoped>
@@ -56,8 +67,8 @@ const activeMenu = computed(() => {
 }
 
 .admin-aside {
-  border-right: 1px solid #e5eaf3;
   background: #ffffff;
+  border-right: 1px solid #e5eaf3;
   transition: width 0.25s ease;
 }
 
@@ -74,8 +85,8 @@ const activeMenu = computed(() => {
 
 .admin-header {
   height: 64px;
-  border-bottom: 1px solid #e5eaf3;
   background: #ffffff;
+  border-bottom: 1px solid #e5eaf3;
   display: flex;
   align-items: center;
   justify-content: space-between;

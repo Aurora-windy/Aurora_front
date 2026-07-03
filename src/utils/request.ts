@@ -10,7 +10,7 @@
  *    - 请求拦截器从 auth.ts 读 token，放进 Authorization 请求头
  *
  * 3. 统一错误处理
- *    - 业务失败（code != 200）弹 Element Plus 错误提示
+ *    - 业务失败（code != 200）弹 Arco 错误提示
  *    - 401 弹确认框跳登录
  *    - 网络错误 / 超时 / HTTP 5xx 弹错误提示
  *
@@ -24,7 +24,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from 'axios'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { Message, Modal } from '@arco-design/web-vue'
 import { getToken, removeToken } from './auth'
 import router from '@/router'
 
@@ -64,22 +64,20 @@ service.interceptors.response.use(
     }
 
     // 业务失败
-    ElMessage.error(msg || '操作失败')
+    Message.error(msg || '操作失败')
 
     // 401：token 过期，弹确认框跳登录
     if (code === 401) {
-      ElMessageBox.confirm('登录状态已过期，请重新登录', '提示', {
-        confirmButtonText: '重新登录',
-        cancelButtonText: '取消',
-        type: 'warning',
-      })
-        .then(() => {
+      Modal.confirm({
+        title: '提示',
+        content: '登录状态已过期，请重新登录',
+        okText: '重新登录',
+        cancelText: '取消',
+        onOk: () => {
           removeToken()
           router.push('/login')
-        })
-        .catch(() => {
-          // 用户点取消，什么都不做
-        })
+        },
+      })
     }
 
     return Promise.reject(new Error(msg || 'Error'))
@@ -98,7 +96,7 @@ service.interceptors.response.use(
       message = '服务器开小差了，请稍后重试'
     }
 
-    ElMessage.error(message)
+    Message.error(message)
     return Promise.reject(error)
   },
 )

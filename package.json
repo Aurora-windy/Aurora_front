@@ -14,17 +14,19 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@arco-design/web-vue": "^2.58.0",
     "axios": "^1.18.0",
     "echarts": "^6.1.0",
-    "element-plus": "^2.14.2",
+    "nprogress": "^0.2.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.38",
-    "vue-router": "^5.1.0"
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@pinia/testing": "^1.0.3",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.12.2",
+    "@types/nprogress": "^0.2.3",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/test-utils": "^2.4.11",
     "@vue/tsconfig": "^0.9.1",

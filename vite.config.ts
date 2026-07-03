@@ -19,12 +19,11 @@ export default defineConfig({
     port: 5173,
     host: '0.0.0.0',
     proxy: {
-      // 前端请求 /api/* 时，转发到后端 8080 并把 /api 前缀去掉
-      // 例：前端 GET /api/system/user → 后端 GET http://localhost:8080/system/user
+      // 前端请求 /api/* 时原样转发到后端 1207（后端 context-path 也是 /api）
+      // 例：前端 GET /api/system/user → 后端 GET http://localhost:1207/api/system/user
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:1207',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
