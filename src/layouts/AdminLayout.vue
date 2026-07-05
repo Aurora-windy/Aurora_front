@@ -33,7 +33,6 @@ async function handleLogout() {
       <!-- 品牌区 -->
       <div class="brand-area">
         <img src="/logo.jpg" alt="AURORA" class="brand-logo" />
-        <span v-show="!appStore.sidebarCollapsed" class="brand-name">AURORA</span>
       </div>
 
       <!-- 菜单 -->
@@ -114,29 +113,20 @@ async function handleLogout() {
 }
 
 .brand-area {
-  height: 56px;
+  height: 64px;
   display: flex;
   align-items: center;
+  justify-content: center;
   padding: 0 16px;
-  gap: 10px;
   border-bottom: 1px solid #E5E6EB;
   flex-shrink: 0;
 }
 
 .brand-logo {
-  width: 28px;
-  height: 28px;
+  height: 32px;
+  width: auto;
   object-fit: contain;
-  border-radius: 6px;
   flex-shrink: 0;
-}
-
-.brand-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1F2329;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
 }
 
 /* 菜单样式覆盖 */

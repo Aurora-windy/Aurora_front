@@ -54,21 +54,18 @@ const nickname = computed(() => userStore.userInfo?.nickname || userStore.userIn
 
     <!-- 快捷入口 -->
     <a-card class="section-card" title="快捷入口">
-      <div class="module-grid">
+      <div class="module-row">
         <div
           v-for="m in modules"
           :key="m.key"
-          class="module-card"
+          class="module-stat"
           @click="handleModuleClick(m.key)"
         >
-          <div class="module-icon" :style="{ background: m.color + '14', color: m.color }">
-            <component :is="m.icon" :size="22" />
+          <div class="module-stat-icon" :style="{ background: m.color + '14', color: m.color }">
+            <component :is="m.icon" :size="20" />
           </div>
-          <div class="module-info">
-            <div class="module-title">{{ m.title }}</div>
-            <div class="module-desc">{{ m.desc }}</div>
-          </div>
-          <icon-right :size="14" class="module-arrow" />
+          <div class="module-stat-title">{{ m.title }}</div>
+          <div class="module-stat-desc">{{ m.desc }}</div>
         </div>
       </div>
     </a-card>
@@ -158,65 +155,52 @@ const nickname = computed(() => userStore.userInfo?.nickname || userStore.userIn
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* === 快捷入口模块卡片 === */
-.module-grid {
+/* === 快捷入口统计卡片 === */
+.module-row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+  justify-content: space-between;
 }
 
-.module-card {
+.module-stat {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 20px 12px;
   border-radius: 8px;
-  border: 1px solid #E5E6EB;
-  background: #FFFFFF;
+  background: #F7F8FA;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.module-card:hover {
-  border-color: #1E3A8A;
+.module-stat:hover {
+  background: #F2F3F5;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.module-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 8px;
+.module-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.module-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.module-title {
+.module-stat-title {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #1F2329;
+  text-align: center;
 }
 
-.module-desc {
-  margin-top: 2px;
+.module-stat-desc {
   font-size: 12px;
   color: #86909C;
-}
-
-.module-arrow {
-  color: #C9CDD4;
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-
-.module-card:hover .module-arrow {
-  color: #1E3A8A;
+  text-align: center;
 }
 
 /* === 系统状态 === */
