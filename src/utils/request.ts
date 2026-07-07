@@ -68,13 +68,13 @@ service.interceptors.response.use(
 
     // 401：token 过期，弹确认框跳登录
     if (code === 401) {
+      removeToken()
       Modal.confirm({
         title: '提示',
         content: '登录状态已过期，请重新登录',
         okText: '重新登录',
         cancelText: '取消',
         onOk: () => {
-          removeToken()
           router.push('/login')
         },
       })

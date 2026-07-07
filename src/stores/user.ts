@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { login as loginApi, logout as logoutApi, getUserInfo } from '@/api/auth'
 import type { LoginReq, UserInfo } from '@/api/auth'
+import { usePermissionStore } from './permission'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string | null>(getToken())
@@ -23,11 +24,17 @@ export const useUserStore = defineStore('user', () => {
     try {
       await logoutApi()
     } finally {
-      token.value = null
-      userInfo.value = null
-      removeToken()
+      clearAuth()
     }
   }
 
-  return { token, userInfo, login, fetchUserInfo, logout }
+  function clearAuth() {
+      const permissionStore = usePermissionStore()
+      permissionStore.reset()
+      token.value = null
+      userInfo.value = null
+      removeToken()
+  }
+
+  return { token, userInfo, login, fetchUserInfo, logout, clearAuth }
 })

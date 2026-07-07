@@ -47,7 +47,7 @@ async function handleLogin() {
     await userStore.fetchUserInfo()
     Message.success('登录成功')
     const redirect = route.query.redirect
-    router.push(typeof redirect === 'string' ? redirect : '/workbench')
+    router.push(typeof redirect === 'string' ? redirect : '/')
   } catch {
     refreshCaptcha()
   } finally {

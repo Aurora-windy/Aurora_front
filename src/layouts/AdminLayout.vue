@@ -1,16 +1,63 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '../stores/app'
 import { useUserStore } from '../stores/user'
+import { usePermissionStore } from '../stores/permission'
 import { Message } from '@arco-design/web-vue'
+import type { AppMenuItem } from '../stores/permission'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
+const permissionStore = usePermissionStore()
 const route = useRoute()
 const router = useRouter()
 
-const activeMenu = computed(() => route.path)
+const openMenuKeys = ref<string[]>([])
+const selectedMenuKeys = computed(() => [route.path])
+
+const iconMap: Record<string, string> = {
+  IconDashboard: 'icon-apps',
+  IconSettings: 'icon-settings',
+  IconUser: 'icon-user',
+  IconUserGroup: 'icon-user-group',
+  IconMenu: 'icon-menu',
+}
+
+function iconName(icon?: string) {
+  return icon ? iconMap[icon] : undefined
+}
+
+function findParentKeys(items: AppMenuItem[], key: string, parents: string[] = []): string[] {
+  for (const item of items) {
+    if (item.key === key) {
+      return parents
+    }
+
+    const childParents = findParentKeys(item.children, key, [...parents, item.key])
+    if (childParents.length) {
+      return childParents
+    }
+  }
+
+  return []
+}
+
+function handleMenuClick(key: string) {
+  router.push(key)
+}
+
+function handleOpenKeysChange(keys: string[]) {
+  openMenuKeys.value = keys
+}
+
+watch(
+  [() => route.path, () => permissionStore.menus],
+  ([path]) => {
+    openMenuKeys.value = findParentKeys(permissionStore.menus, path)
+  },
+  { immediate: true },
+)
 
 async function handleLogout() {
   await userStore.logout()
@@ -37,16 +84,37 @@ async function handleLogout() {
 
       <!-- 菜单 -->
       <a-menu
-        :selected-keys="[activeMenu]"
-        :default-selected-keys="['/workbench']"
+        :selected-keys="selectedMenuKeys"
+        :open-keys="openMenuKeys"
         :collapsed="appStore.sidebarCollapsed"
         :style="{ width: '100%' }"
-        @menu-item-click="(key: string) => router.push(key)"
+        @menu-item-click="handleMenuClick"
+        @update:open-keys="handleOpenKeysChange"
       >
-        <a-menu-item key="/workbench">
-          <template #icon><icon-apps /></template>
-          工作台
-        </a-menu-item>
+        <template v-for="item in permissionStore.menus" :key="item.key">
+          <a-sub-menu v-if="item.children.length" :key="item.key" :class="{ 'menu-open': openMenuKeys.includes(item.key) }">
+            <template #icon>
+              <component :is="iconName(item.icon)" v-if="iconName(item.icon)" />
+            </template>
+            <template #title>{{ item.title }}</template>
+            <a-menu-item
+              v-for="child in item.children"
+              :key="child.key"
+              :class="{ 'menu-active': route.path === child.key }"
+            >
+              <template #icon>
+                <component :is="iconName(child.icon)" v-if="iconName(child.icon)" />
+              </template>
+              {{ child.title }}
+            </a-menu-item>
+          </a-sub-menu>
+          <a-menu-item v-else :key="item.key" :class="{ 'menu-active': route.path === item.key }">
+            <template #icon>
+              <component :is="iconName(item.icon)" v-if="iconName(item.icon)" />
+            </template>
+            {{ item.title }}
+          </a-menu-item>
+        </template>
       </a-menu>
 
       <!-- 折叠按钮 -->
@@ -63,7 +131,7 @@ async function handleLogout() {
         <div class="header-left">
           <a-breadcrumb>
             <a-breadcrumb-item>
-              <icon-home style="font-size: 14px; color: #86909C" />
+              <icon-home class="breadcrumb-home-icon" />
             </a-breadcrumb-item>
             <a-breadcrumb-item v-if="route.meta.title">
               {{ route.meta.title }}
@@ -73,11 +141,11 @@ async function handleLogout() {
         <div class="header-right">
           <a-dropdown trigger="click">
             <div class="user-info">
-              <a-avatar :size="28" :style="{ background: '#1E3A8A', fontSize: '13px' }">
+              <a-avatar :size="28" class="user-avatar">
                 {{ userStore.userInfo?.nickname?.charAt(0) || userStore.userInfo?.username?.charAt(0) || 'A' }}
               </a-avatar>
               <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username || '未登录' }}</span>
-              <icon-down :size="12" style="color: #86909C" />
+              <icon-down :size="12" class="user-dropdown-icon" />
             </div>
             <template #content>
               <a-doption @click="handleLogout">
@@ -104,8 +172,8 @@ async function handleLogout() {
 
 /* === 侧边栏 === */
 .admin-aside {
-  background: #F5F6F8 !important;
-  border-right: 1px solid #E5E6EB;
+  background: var(--color-bg-sidebar) !important;
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   transition: width 0.2s ease;
@@ -117,8 +185,8 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
-  border-bottom: 1px solid #E5E6EB;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
 
@@ -131,30 +199,42 @@ async function handleLogout() {
 
 /* 菜单样式覆盖 */
 .admin-aside :deep(.arco-menu) {
-  padding: 8px;
+  padding: var(--space-2);
 }
 
 .admin-aside :deep(.arco-menu-item) {
   font-size: 14px;
   font-weight: 400;
-  color: #4E5969;
-  border-radius: 6px;
+  color: var(--color-text-body);
+  border-radius: var(--radius-md);
   margin-bottom: 2px;
   transition: all 0.15s ease;
 }
 
 .admin-aside :deep(.arco-menu-item:hover) {
-  background: #F7F8FA;
-  color: #1F2329;
+  background: var(--color-bg-hover);
+  color: var(--color-text-title);
 }
 
-.admin-aside :deep(.arco-menu-item.arco-menu-selected) {
-  background: #E8F0FF;
-  color: #1E3A8A;
+.admin-aside :deep(.arco-menu-item.arco-menu-selected),
+.admin-aside :deep(.arco-menu-item.menu-active) {
+  background: var(--color-menu-active-bg);
+  color: var(--color-menu-active-text);
   font-weight: 500;
 }
 
-.admin-aside :deep(.arco-menu-item.arco-menu-selected)::before {
+.admin-aside :deep(.arco-sub-menu.menu-open > .arco-menu-inline > .arco-menu-inline-header),
+.admin-aside :deep(.menu-open .arco-menu-inline-header) {
+  color: var(--color-menu-open-text);
+  font-weight: 500;
+}
+
+.admin-aside :deep(.arco-sub-menu.menu-open .arco-menu-icon-suffix) {
+  color: var(--color-menu-open-text);
+}
+
+.admin-aside :deep(.arco-menu-item.arco-menu-selected)::before,
+.admin-aside :deep(.arco-menu-item.menu-active)::before {
   content: '';
   position: absolute;
   left: 0;
@@ -162,7 +242,7 @@ async function handleLogout() {
   transform: translateY(-50%);
   width: 3px;
   height: 20px;
-  background: #1E3A8A;
+  background: var(--color-menu-active-text);
   border-radius: 0 2px 2px 0;
 }
 
@@ -173,23 +253,23 @@ async function handleLogout() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #86909C;
-  border-top: 1px solid #E5E6EB;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
   margin-top: auto;
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .collapse-trigger:hover {
-  color: #1E3A8A;
-  background: #F7F8FA;
+  color: var(--color-primary);
+  background: var(--color-bg-hover);
 }
 
 /* === 顶栏 === */
 .admin-header {
   height: 56px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E5E6EB;
+  background: var(--color-bg-card);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -200,6 +280,11 @@ async function handleLogout() {
 .header-left {
   display: flex;
   align-items: center;
+}
+
+.breadcrumb-home-icon {
+  color: var(--color-text-secondary);
+  font-size: 14px;
 }
 
 .header-right {
@@ -218,19 +303,28 @@ async function handleLogout() {
 }
 
 .user-info:hover {
-  background: #F7F8FA;
+  background: var(--color-bg-hover);
+}
+
+.user-avatar {
+  background: var(--color-primary);
+  font-size: 13px;
+}
+
+.user-dropdown-icon {
+  color: var(--color-text-secondary);
 }
 
 .user-name {
   font-size: 14px;
   font-weight: 400;
-  color: #4E5969;
+  color: var(--color-text-body);
 }
 
 /* === 内容区 === */
 .admin-main {
-  padding: 24px;
-  background: #FAFAFA;
+  padding: var(--space-6);
+  background: var(--color-bg-page);
   overflow-y: auto;
 }
 </style>

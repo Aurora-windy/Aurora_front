@@ -5,6 +5,7 @@ import '@arco-design/web-vue/dist/arco.css'
 
 import App from './App.vue'
 import router from './router'
+import { setupPermissionDirective } from './directive/permission'
 
 // AURORA Design System — 飞书风 + 极光装饰
 import './styles/tokens.css'        // CSS 变量 Token
@@ -17,5 +18,6 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(ArcoVue)
 app.use(router)
+setupPermissionDirective(app)
 
 app.mount('#app')
