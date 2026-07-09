@@ -14,7 +14,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增菜单')
 
 const form = reactive<MenuForm>({
-  parentId: 0,
+  parentId: '0',
   title: '',
   type: MenuType.MENU,
   name: '',
@@ -46,7 +46,7 @@ function flattenMenus(list: MenuTreeResp[], result: MenuTreeResp[] = []) {
   return result
 }
 
-function resetForm(parentId = 0) {
+function resetForm(parentId = '0') {
   Object.assign(form, {
     id: undefined,
     parentId,
@@ -72,7 +72,7 @@ async function loadData() {
   }
 }
 
-function openAdd(parentId = 0) {
+function openAdd(parentId = '0') {
   resetForm(parentId)
   dialogTitle.value = '新增菜单'
   dialogVisible.value = true
@@ -149,7 +149,7 @@ onMounted(loadData)
       <a-form :model="form" layout="vertical">
         <a-form-item field="parentId" label="上级菜单">
           <a-select v-model="form.parentId">
-            <a-option :value="0">根节点</a-option>
+            <a-option value="0">根节点</a-option>
             <a-option v-for="menu in flattenMenus(rows)" :key="menu.id" :value="menu.id">{{ menu.title }}</a-option>
           </a-select>
         </a-form-item>

@@ -1,3 +1,5 @@
+export type ApiId = string
+
 export interface PageResult<T> {
   list: T[]
   total: number
@@ -9,7 +11,7 @@ export interface PageQuery {
 }
 
 export interface BatchIdsReq {
-  ids: number[]
+  ids: ApiId[]
 }
 
 export interface UserQuery extends PageQuery {
@@ -19,7 +21,7 @@ export interface UserQuery extends PageQuery {
 }
 
 export interface UserResp {
-  id: number
+  id: ApiId
   username: string
   nickname: string
   avatar?: string
@@ -27,15 +29,15 @@ export interface UserResp {
   phone?: string
   gender?: number
   status?: number
-  deptId?: number
+  deptId?: ApiId
   lastLoginTime?: string
-  roleIds?: number[]
+  roleIds?: ApiId[]
   roleCodes?: string[]
   createTime?: string
 }
 
 export interface UserForm {
-  id?: number
+  id?: ApiId
   username: string
   password?: string
   nickname: string
@@ -44,23 +46,23 @@ export interface UserForm {
   phone?: string
   gender?: number
   status?: number
-  deptId?: number
-  roleIds?: number[]
+  deptId?: ApiId
+  roleIds?: ApiId[]
 }
 
 export interface UserStatusReq {
-  id: number
+  id: ApiId
   status: number
 }
 
 export interface UserResetPasswordReq {
-  id: number
+  id: ApiId
   newPassword?: string
 }
 
 export interface UserAssignRoleReq {
-  userId: number
-  roleIds: number[]
+  userId: ApiId
+  roleIds: ApiId[]
 }
 
 export interface RoleQuery extends PageQuery {
@@ -70,19 +72,19 @@ export interface RoleQuery extends PageQuery {
 }
 
 export interface RoleResp {
-  id: number
+  id: ApiId
   name: string
   code: string
   dataScope: number
   sort?: number
   status?: number
   remark?: string
-  menuIds?: number[]
+  menuIds?: ApiId[]
   createTime?: string
 }
 
 export interface RoleForm {
-  id?: number
+  id?: ApiId
   name: string
   code: string
   dataScope: number
@@ -92,18 +94,18 @@ export interface RoleForm {
 }
 
 export interface RoleStatusReq {
-  id: number
+  id: ApiId
   status: number
 }
 
 export interface RoleAssignMenuReq {
-  roleId: number
-  menuIds: number[]
+  roleId: ApiId
+  menuIds: ApiId[]
 }
 
 export interface MenuResp {
-  id: number
-  parentId: number
+  id: ApiId
+  parentId: ApiId
   title: string
   type: number
   name?: string
@@ -122,8 +124,8 @@ export interface MenuTreeResp extends MenuResp {
 }
 
 export interface UserRouteResp {
-  id: number
-  parentId: number
+  id: ApiId
+  parentId: ApiId
   title: string
   name?: string
   path?: string
@@ -135,8 +137,8 @@ export interface UserRouteResp {
 }
 
 export interface MenuForm {
-  id?: number
-  parentId?: number
+  id?: ApiId
+  parentId?: ApiId
   title: string
   type: number
   name?: string

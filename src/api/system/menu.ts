@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { MenuForm, MenuResp, MenuTreeResp, UserRouteResp } from './types'
+import type { ApiId, MenuForm, MenuResp, MenuTreeResp, UserRouteResp } from './types'
 
 const BASE_URL = '/system/menus'
 
@@ -11,18 +11,18 @@ export function getUserRoutes() {
   return request.get<UserRouteResp[]>(`${BASE_URL}/user-routes`)
 }
 
-export function getMenu(id: number) {
+export function getMenu(id: ApiId) {
   return request.get<MenuResp>(`${BASE_URL}/${id}`)
 }
 
 export function addMenu(data: MenuForm) {
-  return request.post<number>(BASE_URL, data)
+  return request.post<ApiId>(BASE_URL, data)
 }
 
 export function updateMenu(data: MenuForm) {
   return request.put<boolean>(BASE_URL, data)
 }
 
-export function deleteMenu(id: number) {
+export function deleteMenu(id: ApiId) {
   return request.delete<boolean>(`${BASE_URL}/${id}`)
 }

@@ -18,6 +18,10 @@ const componentMap: Record<string, Component> = {
   'system/user/index': () => import('@/views/system/user/index.vue'),
   'system/role/index': () => import('@/views/system/role/index.vue'),
   'system/menu/index': () => import('@/views/system/menu/index.vue'),
+  'edu/student/index': () => import('@/views/edu/student/index.vue'),
+  'edu/teacher/index': () => import('@/views/edu/teacher/index.vue'),
+  'edu/course/index': () => import('@/views/edu/course/index.vue'),
+  'edu/selection/index': () => import('@/views/edu/selection/index.vue'),
 }
 
 function normalizePath(path?: string): string {
@@ -28,7 +32,7 @@ function normalizePath(path?: string): string {
 }
 
 function sortRoutes(routes: UserRouteResp[]): UserRouteResp[] {
-  return [...routes].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || a.id - b.id)
+  return [...routes].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || String(a.id).localeCompare(String(b.id)))
 }
 
 function toMenuItem(route: UserRouteResp): AppMenuItem | null {

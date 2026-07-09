@@ -8,6 +8,7 @@ import type {
   UserResetPasswordReq,
   UserResp,
   UserStatusReq,
+  ApiId,
 } from './types'
 
 const BASE_URL = '/system/users'
@@ -16,19 +17,19 @@ export function listUsers(params: UserQuery) {
   return request.get<PageResult<UserResp>>(BASE_URL, { params })
 }
 
-export function getUser(id: number) {
+export function getUser(id: ApiId) {
   return request.get<UserResp>(`${BASE_URL}/${id}`)
 }
 
 export function addUser(data: UserForm) {
-  return request.post<number>(BASE_URL, data)
+  return request.post<ApiId>(BASE_URL, data)
 }
 
 export function updateUser(data: UserForm) {
   return request.put<boolean>(BASE_URL, data)
 }
 
-export function deleteUser(id: number) {
+export function deleteUser(id: ApiId) {
   return request.delete<boolean>(`${BASE_URL}/${id}`)
 }
 

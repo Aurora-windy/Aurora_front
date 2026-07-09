@@ -1,5 +1,6 @@
 import request from '@/utils/request'
 import type {
+  ApiId,
   PageResult,
   RoleAssignMenuReq,
   RoleForm,
@@ -14,19 +15,19 @@ export function listRoles(params: RoleQuery) {
   return request.get<PageResult<RoleResp>>(BASE_URL, { params })
 }
 
-export function getRole(id: number) {
+export function getRole(id: ApiId) {
   return request.get<RoleResp>(`${BASE_URL}/${id}`)
 }
 
 export function addRole(data: RoleForm) {
-  return request.post<number>(BASE_URL, data)
+  return request.post<ApiId>(BASE_URL, data)
 }
 
 export function updateRole(data: RoleForm) {
   return request.put<boolean>(BASE_URL, data)
 }
 
-export function deleteRole(id: number) {
+export function deleteRole(id: ApiId) {
   return request.delete<boolean>(`${BASE_URL}/${id}`)
 }
 

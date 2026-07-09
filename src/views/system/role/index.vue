@@ -5,10 +5,10 @@ import { PermCode } from '@/constants/perm-codes'
 import { Status, getStatusMeta } from '@/enums/common/status'
 import { addRole, assignRoleMenu, deleteRole, getRole, listRoles, updateRole, updateRoleStatus } from '@/api/system/role'
 import { listMenuTree } from '@/api/system/menu'
-import type { MenuTreeResp, RoleForm, RoleQuery, RoleResp } from '@/api/system/types'
+import type { ApiId, MenuTreeResp, RoleForm, RoleQuery, RoleResp } from '@/api/system/types'
 
 interface MenuTreeNode {
-  id: number
+  id: ApiId
   title: string
   children?: MenuTreeNode[]
 }
@@ -22,7 +22,7 @@ const dialogVisible = ref(false)
 const menuDialogVisible = ref(false)
 const dialogTitle = ref('新增角色')
 const currentRole = ref<RoleResp | null>(null)
-const checkedMenuIds = ref<number[]>([])
+const checkedMenuIds = ref<ApiId[]>([])
 
 const query = reactive<RoleQuery>({ pageNum: 1, pageSize: 10, name: '', code: '', status: undefined })
 const form = reactive<RoleForm>({ name: '', code: '', dataScope: 1, sort: 0, status: Status.ENABLED, remark: '' })

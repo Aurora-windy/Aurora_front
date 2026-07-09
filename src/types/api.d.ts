@@ -51,10 +51,10 @@ export interface PageResult<T> {
  * 所有从数据库查出来的实体都会有这几个字段。
  */
 export interface BaseEntity {
-  id?: number
-  createUser?: number
+  id?: string
+  createUser?: string
   createTime?: string
-  updateUser?: number
+  updateUser?: string
   updateTime?: string
   deleted?: number
 }
