@@ -11,6 +11,25 @@ export interface StudentQuery extends PageQuery {
   status?: number
 }
 
+export interface StudentAccountOptionQuery {
+  keyword?: string
+  currentStudentId?: ApiId
+  limit?: number
+}
+
+export interface StudentAccountOptionResp {
+  userId: ApiId
+  username: string
+  nickname?: string
+}
+
+export interface StudentProfileStatusResp {
+  bound: boolean
+  enabled: boolean
+  studentId?: ApiId
+  message?: string
+}
+
 export interface StudentResp {
   id: ApiId
   userId?: ApiId

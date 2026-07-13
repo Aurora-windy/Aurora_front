@@ -2,18 +2,25 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Message, Modal } from '@arco-design/web-vue'
 import { PermCode } from '@/constants/perm-codes'
+import { RoleCode } from '@/constants/role-codes'
 import { listAvailableCourses } from '@/api/edu/course'
 import { dropCourse, listMySelections, selectCourse } from '@/api/edu/selection'
+import { getMyStudentProfileStatus } from '@/api/edu/student'
 import type { ApiId } from '@/api/system/types'
-import type { CourseQuery, CourseResp, SelectionResp } from '@/api/edu/types'
+import type { CourseQuery, CourseResp, SelectionResp, StudentProfileStatusResp } from '@/api/edu/types'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const actionLoading = ref<ApiId>('')
 const courses = ref<CourseResp[]>([])
 const selections = ref<SelectionResp[]>([])
+const profileStatus = ref<StudentProfileStatusResp | null>(null)
 const total = ref(0)
 const query = reactive<CourseQuery>({ pageNum: 1, pageSize: 10, courseCode: '', name: '' })
 
+const isStudent = computed(() => userStore.userInfo?.roles.includes(RoleCode.STUDENT) ?? false)
+const profileReady = computed(() => profileStatus.value?.bound === true && profileStatus.value?.enabled === true)
 const activeCourseIds = computed(() => new Set(selections.value.filter((item) => item.status === 1).map((item) => item.courseId)))
 
 const courseColumns = [
@@ -37,10 +44,33 @@ const selectionColumns = [
 async function loadData() {
   loading.value = true
   try {
-    const [courseResult, selectionResult] = await Promise.all([listAvailableCourses(query), listMySelections()])
+    const courseResult = await listAvailableCourses(query)
     courses.value = courseResult.list
     total.value = courseResult.total
-    selections.value = selectionResult
+    if (!isStudent.value) {
+      profileStatus.value = null
+      selections.value = []
+      return
+    }
+
+    try {
+      profileStatus.value = await getMyStudentProfileStatus()
+    } catch {
+      profileStatus.value = null
+      selections.value = []
+      return
+    }
+
+    if (!profileReady.value) {
+      selections.value = []
+      return
+    }
+
+    try {
+      selections.value = await listMySelections()
+    } catch {
+      selections.value = []
+    }
   } finally {
     loading.value = false
   }
@@ -122,12 +152,18 @@ onMounted(loadData)
       </a-space>
     </div>
 
+    <a-alert
+      v-if='isStudent && profileStatus && !profileReady'
+      type='warning'
+      :title='profileStatus.message || "当前学生档案不可用于选课"'
+    />
+
     <a-table row-key='id' :loading='loading' :columns='courseColumns' :data='courses' :pagination='{ total, current: query.pageNum, pageSize: query.pageSize, showTotal: true, showPageSize: true }' @page-change='pageChange' @page-size-change='pageSizeChange'>
       <template #remaining='{ record }'>
         <a-tag :color='remainingColor(record)'>{{ record.remainingCount }}</a-tag>
       </template>
       <template #actions='{ record }'>
-        <a-button v-permission='PermCode.Edu.SELECTION_SELECT' size='small' type='primary' :loading='actionLoading === record.id' :disabled='record.remainingCount <= 0 || activeCourseIds.has(record.id)' @click='handleSelect(record)'>选课</a-button>
+        <a-button v-if='isStudent' v-permission='PermCode.Edu.SELECTION_SELECT' size='small' type='primary' :loading='actionLoading === record.id' :disabled='!profileReady || record.remainingCount <= 0 || activeCourseIds.has(record.id)' @click='handleSelect(record)'>选课</a-button>
       </template>
     </a-table>
 
@@ -136,7 +172,7 @@ onMounted(loadData)
         <a-tag :color='selectionStatusColor(record)'>{{ isActiveSelection(record) ? '已选' : '已退' }}</a-tag>
       </template>
       <template #actions='{ record }'>
-        <a-button v-if='isActiveSelection(record)' v-permission='PermCode.Edu.SELECTION_DROP' size='small' status='danger' :loading='actionLoading === record.courseId' @click='handleDrop(record)'>退课</a-button>
+        <a-button v-if='isStudent && profileReady && isActiveSelection(record)' v-permission='PermCode.Edu.SELECTION_DROP' size='small' status='danger' :loading='actionLoading === record.courseId' @click='handleDrop(record)'>退课</a-button>
       </template>
     </a-table>
   </div>

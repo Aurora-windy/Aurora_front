@@ -62,7 +62,7 @@ watch(
 async function handleLogout() {
   await userStore.logout()
   Message.success('已退出登录')
-  router.push('/login')
+  await router.replace('/login')
 }
 </script>
 

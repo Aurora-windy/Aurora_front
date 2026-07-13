@@ -23,17 +23,19 @@ export const useUserStore = defineStore('user', () => {
   async function logout() {
     try {
       await logoutApi()
+    } catch (error) {
+      console.warn('[auth] Remote logout failed; local session will still be cleared.', error)
     } finally {
       clearAuth()
     }
   }
 
   function clearAuth() {
-      const permissionStore = usePermissionStore()
-      permissionStore.reset()
-      token.value = null
-      userInfo.value = null
-      removeToken()
+    const permissionStore = usePermissionStore()
+    permissionStore.reset()
+    token.value = null
+    userInfo.value = null
+    removeToken()
   }
 
   return { token, userInfo, login, fetchUserInfo, logout, clearAuth }
