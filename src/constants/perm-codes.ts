@@ -1,17 +1,14 @@
 /**
- * 权限码常量（与后端 PermCodeConst 一一对应）
+ * 鏉冮檺鐮佸父閲忥紙涓庡悗绔?PermCodeConst 涓€涓€瀵瑰簲锛? *
+ * spec: docs/specs/2026-07-05-global-variables.md 搂3.2.4 / 搂4.2.4
+ * 鍚庣: aurora-common/.../constant/PermCodeConst.java
  *
- * spec: docs/specs/2026-07-05-global-variables.md §3.2.4 / §4.2.4
- * 后端: aurora-common/.../constant/PermCodeConst.java
+ * 鍛藉悕瑙勫垯锛氭ā鍧?璧勬簮:鍔ㄤ綔锛屼笁娈靛紡锛屽叏灏忓啓锛宬ebab-case锛堜笌 continew-admin 涓€鑷达級銆? * 鍓嶇鐢ㄦ硶锛歷-perm="'system:user:add'" 鎴?hasPerm(PermCode.System.User.ADD)
  *
- * 命名规则：模块:资源:动作，三段式，全小写，kebab-case（与 continew-admin 一致）。
- * 前端用法：v-perm="'system:user:add'" 或 hasPerm(PermCode.System.User.ADD)
- *
- * 嵌套对象层级：模块 → 资源 → 动作字符串。镜像 Java 嵌套类结构。
- */
+ * 宓屽瀵硅薄灞傜骇锛氭ā鍧?鈫?璧勬簮 鈫?鍔ㄤ綔瀛楃涓层€傞暅鍍?Java 宓屽绫荤粨鏋勩€? */
 
 export const PermCode = {
-  /** 系统模块（基座 RBAC） */
+  /** 绯荤粺妯″潡锛堝熀搴?RBAC锛?*/
   System: {
     User: {
       LIST:           'system:user:list',
@@ -43,7 +40,7 @@ export const PermCode = {
     },
   },
 
-  /** HR 模块（Phase 2） */
+  /** HR 妯″潡锛圥hase 2锛?*/
   Hr: {
     Dept: {
       LIST:   'hr:dept:list',
@@ -71,7 +68,7 @@ export const PermCode = {
     },
   },
 
-  /** EDU 模块（Phase 3） */
+  /** EDU 妯″潡锛圥hase 3锛?*/
   Edu: {
     Student: {
       LIST:   'edu:student:list',
@@ -97,7 +94,7 @@ export const PermCode = {
     SELECTION_DROP:   'edu:selection:drop',
   },
 
-  /** OJ 模块（Phase 4） */
+  /** OJ 妯″潡锛圥hase 4锛?*/
   Oj: {
     Problem: {
       LIST:   'oj:problem:list',
@@ -112,7 +109,7 @@ export const PermCode = {
     LEADERBOARD_VIEW:   'oj:leaderboard:view',
   },
 
-  /** MALL 模块（Phase 5，答辩核心） */
+  /** MALL 妯″潡锛圥hase 5锛岀瓟杈╂牳蹇冿級 */
   Mall: {
     Product: {
       LIST:   'mall:product:list',
@@ -144,25 +141,41 @@ export const PermCode = {
     SECKILL_JOIN: 'mall:seckill:join',
   },
 
-  /** AI 模块（Phase 6） */
+  /** AI module */
   Ai: {
-    Document: {
-      UPLOAD: 'ai:document:upload',
-      REMOVE: 'ai:document:remove',
+    Chat: {
+      USE: 'ai:chat:use',
     },
-    CHAT_SEND:    'ai:chat:send',
-    CHAT_HISTORY: 'ai:chat:history',
+    Session: {
+      LIST: 'ai:session:list',
+    },
+    Knowledge: {
+      LIST:    'ai:knowledge:list',
+      CREATE:  'ai:knowledge:create',
+      UPDATE:  'ai:knowledge:update',
+      DELETE:  'ai:knowledge:delete',
+      PUBLISH: 'ai:knowledge:publish',
+    },
+    Provider: {
+      LIST:   'ai:provider:list',
+      CREATE: 'ai:provider:create',
+      UPDATE: 'ai:provider:update',
+      TEST:   'ai:provider:test',
+    },
+    Audit: {
+      LIST: 'ai:audit:list',
+    },
   },
 } as const
 
-/** 递归提取所有权限码字符串字面量类型 */
+/** 閫掑綊鎻愬彇鎵€鏈夋潈闄愮爜瀛楃涓插瓧闈㈤噺绫诲瀷 */
 type DeepStringValues<T> = {
   [K in keyof T]: T[K] extends string ? T[K] : DeepStringValues<T[K]>
 }[keyof T]
 
 export type PermCode = DeepStringValues<typeof PermCode>
 
-/** 收集所有叶子权限码（运行时给 v-perm 全量注册或调试用） */
+/** 鏀堕泦鎵€鏈夊彾瀛愭潈闄愮爜锛堣繍琛屾椂缁?v-perm 鍏ㄩ噺娉ㄥ唽鎴栬皟璇曠敤锛?*/
 const collectAllPerms = (obj: unknown, acc: string[] = []): string[] => {
   if (typeof obj === 'string') {
     acc.push(obj)

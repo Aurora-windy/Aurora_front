@@ -6,6 +6,7 @@ import { useUserStore } from '../stores/user'
 import { usePermissionStore } from '../stores/permission'
 import { Message } from '@arco-design/web-vue'
 import type { AppMenuItem } from '../stores/permission'
+import AiFloatingAgent from '../components/ai/AiFloatingAgent.vue'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -22,6 +23,11 @@ const iconMap: Record<string, string> = {
   IconUser: 'icon-user',
   IconUserGroup: 'icon-user-group',
   IconMenu: 'icon-menu',
+  IconRobot: 'icon-robot',
+  IconCloud: 'icon-cloud',
+  IconBook: 'icon-book',
+  IconMessage: 'icon-message',
+  IconHistory: 'icon-history',
 }
 
 function iconName(icon?: string) {
@@ -162,6 +168,7 @@ async function handleLogout() {
         <RouterView />
       </a-layout-content>
     </a-layout>
+    <AiFloatingAgent />
   </a-layout>
 </template>
 

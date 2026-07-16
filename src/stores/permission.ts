@@ -22,6 +22,11 @@ const componentMap: Record<string, Component> = {
   'edu/teacher/index': () => import('@/views/edu/teacher/index.vue'),
   'edu/course/index': () => import('@/views/edu/course/index.vue'),
   'edu/selection/index': () => import('@/views/edu/selection/index.vue'),
+  'ai/provider/index': () => import('@/views/ai/provider/index.vue'),
+  'ai/knowledge/index': () => import('@/views/ai/knowledge/index.vue'),
+  'ai/chat/index': () => import('@/views/ai/chat/index.vue'),
+  'ai/audit/index': () => import('@/views/ai/audit/index.vue'),
+  'ai/session/index': () => import('@/views/ai/session/index.vue'),
 }
 
 function normalizePath(path?: string): string {
