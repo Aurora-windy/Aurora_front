@@ -12,8 +12,8 @@ const acting = ref(false)
 const providers = ref<ProviderOptionResp[]>([])
 const sessions = ref<ChatSessionResp[]>([])
 const messages = ref<ChatMessageResp[]>([])
-const selectedProviderId = ref<string | number>()
-const currentSessionId = ref<string | number>()
+const selectedProviderId = ref<string>()
+const currentSessionId = ref<string>()
 const input = ref('')
 const citations = ref<KnowledgeCitation[]>([])
 const pendingAction = ref<ActionResp>()
@@ -84,17 +84,17 @@ async function bootstrap() {
 
 async function loadProviders() {
   providers.value = await listEnabledProviders()
-  if (!selectedProviderId.value && providers.value.length) selectedProviderId.value = providers.value[0].id
+  if (!selectedProviderId.value && providers.value.length) selectedProviderId.value = providers.value[0]!.id
 }
 
 async function loadSessions() {
   sessions.value = await listSessions()
   if (!currentSessionId.value && sessions.value.length) {
-    await selectSession(sessions.value[0].id)
+    await selectSession(sessions.value[0]!.id)
   }
 }
 
-async function selectSession(sessionId: string | number) {
+async function selectSession(sessionId: string) {
   currentSessionId.value = sessionId
   const session = sessions.value.find((item) => item.id === sessionId)
   if (session?.providerId) selectedProviderId.value = session.providerId
@@ -322,7 +322,7 @@ onBeforeUnmount(() => {
             {{ provider.name }} / {{ provider.model }}
           </a-option>
         </a-select>
-        <a-select v-model="currentSessionId" allow-clear placeholder="选择会话" @change="value => value && selectSession(value as string | number)">
+        <a-select v-model="currentSessionId" allow-clear placeholder="选择会话" @change="value => value && selectSession(value as string)">
           <a-option v-for="session in sessions" :key="session.id" :value="session.id">
             {{ session.title }}
           </a-option>

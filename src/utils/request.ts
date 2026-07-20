@@ -123,4 +123,7 @@ request.put = <T = unknown>(url: string, data?: unknown, config?: AxiosRequestCo
 request.delete = <T = unknown>(url: string, config?: AxiosRequestConfig) =>
   request<T>({ ...config, method: 'DELETE', url })
 
+request.patch = <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+  request<T>({ ...config, method: 'PATCH', url, data })
+
 export default request

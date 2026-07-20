@@ -1,5 +1,7 @@
 import type { ApiId, PageQuery } from '@/api/system/types'
 
+export type ProviderUsageType = 'CHAT' | 'EMBEDDING' | 'BOTH'
+
 export interface PageResult<T> {
   list: T[]
   total: number
@@ -16,8 +18,9 @@ export interface ProviderResp {
   id: ApiId
   code: string
   name: string
-  baseUrl: string
   model: string
+  usageType: ProviderUsageType
+  embeddingDimension?: number
   temperature?: number
   maxTokens?: number
   timeoutSeconds?: number
@@ -31,8 +34,9 @@ export interface ProviderOptionResp {
   id: ApiId
   code: string
   name: string
-  baseUrl: string
   model: string
+  usageType: ProviderUsageType
+  embeddingDimension?: number
   temperature?: number
   maxTokens?: number
   timeoutSeconds?: number
@@ -42,9 +46,11 @@ export interface ProviderOptionResp {
 export interface ProviderForm {
   code: string
   name: string
-  baseUrl: string
+  baseUrl?: string
   apiKey?: string
   model: string
+  usageType?: ProviderUsageType
+  embeddingDimension?: number
   temperature?: number
   maxTokens?: number
   timeoutSeconds?: number
@@ -64,7 +70,6 @@ export interface ProviderTestResp {
 
 export interface EmbeddingConfigResp {
   id?: ApiId
-  baseUrl?: string
   model?: string
   dimension?: number
   timeoutSeconds?: number
@@ -74,7 +79,7 @@ export interface EmbeddingConfigResp {
 }
 
 export interface EmbeddingConfigForm {
-  baseUrl: string
+  baseUrl?: string
   apiKey?: string
   model: string
   dimension?: number
@@ -231,3 +236,5 @@ export interface ToolCallLogResp {
   finishedAt?: string
   createTime?: string
 }
+
+

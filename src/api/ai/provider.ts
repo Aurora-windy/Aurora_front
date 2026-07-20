@@ -38,6 +38,10 @@ export function testProvider(id: ApiId) {
   return request.post<ProviderTestResp>(`${BASE_URL}/admin/providers/${id}/test`)
 }
 
+export function deleteProvider(id: ApiId) {
+  return request.delete<boolean>(`${BASE_URL}/admin/providers/${id}`)
+}
+
 export function getEmbeddingConfig() {
   return request.get<EmbeddingConfigResp | null>(`${BASE_URL}/admin/embedding-config`)
 }

@@ -12,8 +12,8 @@ const acting = ref(false)
 const providers = ref<ProviderOptionResp[]>([])
 const sessions = ref<ChatSessionResp[]>([])
 const messages = ref<ChatMessageResp[]>([])
-const currentSessionId = ref<string | number>()
-const selectedProviderId = ref<string | number>()
+const currentSessionId = ref<string>()
+const selectedProviderId = ref<string>()
 const input = ref('')
 const citations = ref<KnowledgeCitation[]>([])
 const pendingAction = ref<ActionResp>()
@@ -54,7 +54,7 @@ function parseMetadata(message: ChatMessageResp) {
 async function loadProviders() {
   providers.value = await listEnabledProviders()
   if (!selectedProviderId.value && providers.value.length) {
-    selectedProviderId.value = providers.value[0].id
+    selectedProviderId.value = providers.value[0]!.id
   }
 }
 
@@ -63,14 +63,14 @@ async function loadSessions() {
   try {
     sessions.value = await listSessions()
     if (!currentSessionId.value && sessions.value.length) {
-      await selectSession(sessions.value[0].id)
+      await selectSession(sessions.value[0]!.id)
     }
   } finally {
     loadingSessions.value = false
   }
 }
 
-async function selectSession(sessionId: string | number) {
+async function selectSession(sessionId: string) {
   currentSessionId.value = sessionId
   const session = sessions.value.find((item) => item.id === sessionId)
   if (session?.providerId) selectedProviderId.value = session.providerId

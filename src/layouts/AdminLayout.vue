@@ -28,6 +28,7 @@ const iconMap: Record<string, string> = {
   IconBook: 'icon-book',
   IconMessage: 'icon-message',
   IconHistory: 'icon-history',
+  IconCode: 'icon-code',
 }
 
 function iconName(icon?: string) {

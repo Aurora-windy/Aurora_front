@@ -31,7 +31,7 @@ const query = reactive<KnowledgeDocQuery>({
   status: '',
 })
 
-const form = reactive<KnowledgeDocForm & { id?: string | number }>({
+const form = reactive<KnowledgeDocForm & { id?: string }>({
   title: '',
   type: 'USAGE_GUIDE',
   content: '',
