@@ -22,6 +22,11 @@ const componentMap: Record<string, Component> = {
   'edu/teacher/index': () => import('@/views/edu/teacher/index.vue'),
   'edu/course/index': () => import('@/views/edu/course/index.vue'),
   'edu/selection/index': () => import('@/views/edu/selection/index.vue'),
+  'mall/product/index': () => import('@/views/mall/product/index.vue'),
+  'mall/shop/index': () => import('@/views/mall/shop/index.vue'),
+  'mall/cart/index': () => import('@/views/mall/cart/index.vue'),
+  'mall/order/index': () => import('@/views/mall/order/index.vue'),
+  'mall/my-order/index': () => import('@/views/mall/my-order/index.vue'),
   'ai/provider/index': () => import('@/views/ai/provider/index.vue'),
   'ai/knowledge/index': () => import('@/views/ai/knowledge/index.vue'),
   'ai/chat/index': () => import('@/views/ai/chat/index.vue'),
@@ -70,7 +75,7 @@ function toRouteRecords(routes: UserRouteResp[]): RouteRecordRaw[] {
         path: path.replace(/^\//, ''),
         name: route.name || path,
         component: componentMap[componentKey],
-        meta: { title: route.title, requiresAuth: true },
+        meta: { title: route.title, requiresAuth: true, fullscreen: componentKey === 'builder/index' },
       })
     }
     records.push(...toRouteRecords(route.children ?? []))

@@ -16,6 +16,7 @@ const router = useRouter()
 
 const openMenuKeys = ref<string[]>([])
 const selectedMenuKeys = computed(() => [route.path])
+const fullscreen = computed(() => route.meta.fullscreen === true)
 
 const iconMap: Record<string, string> = {
   IconDashboard: 'icon-apps',
@@ -29,6 +30,8 @@ const iconMap: Record<string, string> = {
   IconMessage: 'icon-message',
   IconHistory: 'icon-history',
   IconCode: 'icon-code',
+  IconShoppingCart: 'icon-shopping-cart',
+  IconFile: 'icon-file',
 }
 
 function iconName(icon?: string) {
@@ -77,6 +80,7 @@ async function handleLogout() {
   <a-layout class="admin-layout">
     <!-- 侧边栏 -->
     <a-layout-sider
+      v-if="!fullscreen"
       class="admin-aside"
       :width="appStore.sidebarCollapsed ? 64 : 220"
       :collapsed="appStore.sidebarCollapsed"
@@ -134,7 +138,7 @@ async function handleLogout() {
     <!-- 右侧区域 -->
     <a-layout>
       <!-- 顶栏 -->
-      <header class="admin-header">
+      <header v-if="!fullscreen" class="admin-header">
         <div class="header-left">
           <a-breadcrumb>
             <a-breadcrumb-item>
@@ -165,11 +169,11 @@ async function handleLogout() {
       </header>
 
       <!-- 内容区 -->
-      <a-layout-content class="admin-main">
+      <a-layout-content class="admin-main" :class="{ fullscreen }">
         <RouterView />
       </a-layout-content>
     </a-layout>
-    <AiFloatingAgent />
+    <AiFloatingAgent v-if="!fullscreen" />
   </a-layout>
 </template>
 
@@ -334,5 +338,11 @@ async function handleLogout() {
   padding: var(--space-6);
   background: var(--color-bg-page);
   overflow-y: auto;
+}
+
+.admin-main.fullscreen {
+  height: 100vh;
+  padding: 0;
+  overflow: hidden;
 }
 </style>
