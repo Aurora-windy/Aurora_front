@@ -37,6 +37,9 @@ const componentMap: Record<string, Component> = {
   'ai/audit/index': () => import('@/views/ai/audit/index.vue'),
   'ai/session/index': () => import('@/views/ai/session/index.vue'),
   'builder/index': () => import('@/views/builder/index.vue'),
+  'hr/dept/index': () => import('@/views/hr/dept/index.vue'),
+  'hr/position/index': () => import('@/views/hr/position/index.vue'),
+  'hr/employee/index': () => import('@/views/hr/employee/index.vue'),
 }
 
 function normalizePath(path?: string): string {
