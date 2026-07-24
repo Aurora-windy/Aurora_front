@@ -27,6 +27,9 @@ const componentMap: Record<string, Component> = {
   'mall/cart/index': () => import('@/views/mall/cart/index.vue'),
   'mall/order/index': () => import('@/views/mall/order/index.vue'),
   'mall/my-order/index': () => import('@/views/mall/my-order/index.vue'),
+  'mall/seckill/index': () => import('@/views/mall/seckill/index.vue'),
+  'mall/seckill-join/index': () => import('@/views/mall/seckill-join/index.vue'),
+  'mall/stock-log/index': () => import('@/views/mall/stock-log/index.vue'),
   'oj/problem/index': () => import('@/views/oj/problem/index.vue'),
   'oj/practice/index': () => import('@/views/oj/practice/index.vue'),
   'oj/submission/index': () => import('@/views/oj/submission/index.vue'),
@@ -40,6 +43,8 @@ const componentMap: Record<string, Component> = {
   'hr/dept/index': () => import('@/views/hr/dept/index.vue'),
   'hr/position/index': () => import('@/views/hr/position/index.vue'),
   'hr/employee/index': () => import('@/views/hr/employee/index.vue'),
+  'hr/my-attendance/index': () => import('@/views/hr/my-attendance/index.vue'),
+  'hr/attendance-manage/index': () => import('@/views/hr/attendance-manage/index.vue'),
 }
 
 function normalizePath(path?: string): string {
