@@ -19,6 +19,7 @@ export interface ProviderResp {
   code: string
   name: string
   model: string
+  embeddingModel?: string
   usageType: ProviderUsageType
   embeddingDimension?: number
   temperature?: number
@@ -35,6 +36,7 @@ export interface ProviderOptionResp {
   code: string
   name: string
   model: string
+  embeddingModel?: string
   usageType: ProviderUsageType
   embeddingDimension?: number
   temperature?: number
@@ -49,6 +51,7 @@ export interface ProviderForm {
   baseUrl?: string
   apiKey?: string
   model: string
+  embeddingModel?: string
   usageType?: ProviderUsageType
   embeddingDimension?: number
   temperature?: number
@@ -56,6 +59,13 @@ export interface ProviderForm {
   timeoutSeconds?: number
   enabled?: boolean
   sortOrder?: number
+}
+
+export interface EmbeddingModelOption {
+  model: string
+  dimension: number
+  source: 'LOCAL' | 'CLOUD'
+  hint?: string
 }
 
 export interface ProviderEnabledReq {

@@ -5,6 +5,7 @@ import {
   createProvider,
   getEmbeddingConfig,
   listAdminProviders,
+  listEmbeddingModels,
   saveEmbeddingConfig,
   setProviderEnabled,
   testEmbeddingConfig,
@@ -12,13 +13,14 @@ import {
   updateProvider,
   deleteProvider,
 } from '@/api/ai/provider'
-import type { EmbeddingConfigForm, ProviderForm, ProviderQuery, ProviderResp } from '@/api/ai/types'
+import type { EmbeddingConfigForm, EmbeddingModelOption, ProviderForm, ProviderQuery, ProviderResp } from '@/api/ai/types'
 
 const loading = ref(false)
 const saving = ref(false)
 const testing = ref(false)
 const rows = ref<ProviderResp[]>([])
 const total = ref(0)
+const embeddingModelOptions = ref<EmbeddingModelOption[]>([])
 const providerDialogVisible = ref(false)
 const embeddingDialogVisible = ref(false)
 const providerDialogTitle = ref('Provider Config')
@@ -38,6 +40,7 @@ const providerForm = reactive<ProviderForm & { id?: string }>({
   baseUrl: '',
   apiKey: '',
   model: '',
+  embeddingModel: '',
   usageType: 'CHAT',
   embeddingDimension: undefined,
   temperature: 0.7,
@@ -74,6 +77,7 @@ function resetProviderForm() {
     baseUrl: '',
     apiKey: '',
     model: '',
+    embeddingModel: '',
     usageType: 'CHAT',
     embeddingDimension: undefined,
     temperature: 0.7,
@@ -82,6 +86,17 @@ function resetProviderForm() {
     enabled: true,
     sortOrder: 0,
   })
+}
+
+function loadEmbeddingModels() {
+  listEmbeddingModels().then((list) => {
+    embeddingModelOptions.value = list
+  })
+}
+
+function onEmbeddingModelChange(model: any) {
+  const opt = embeddingModelOptions.value.find((o) => o.model === model)
+  providerForm.embeddingDimension = opt ? opt.dimension : undefined
 }
 
 async function loadData() {
@@ -123,6 +138,7 @@ function openEdit(row: ProviderResp) {
     baseUrl: '',
     apiKey: '',
     model: row.model,
+    embeddingModel: row.embeddingModel ?? '',
     usageType: row.usageType ?? 'CHAT',
     embeddingDimension: row.embeddingDimension,
     temperature: row.temperature ?? 0.7,
@@ -147,6 +163,7 @@ async function handleSaveProvider() {
     }
     if (payload.usageType === 'CHAT') {
       delete payload.embeddingDimension
+      delete payload.embeddingModel
     }
     if (providerForm.id) {
       await updateProvider(providerForm.id, payload)
@@ -240,7 +257,10 @@ function handlePageSizeChange(pageSize: number) {
   loadData()
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  loadEmbeddingModels()
+})
 </script>
 <template>
   <div class="ai-provider-page">
@@ -293,6 +313,25 @@ onMounted(loadData)
         <a-form-item field="baseUrl" label="Base URL"><a-input v-model="providerForm.baseUrl" placeholder="Leave blank to keep existing Base URL" /></a-form-item>
         <a-form-item field="apiKey" label="API Key"><a-input-password v-model="providerForm.apiKey" placeholder="Leave blank to keep existing API Key" /></a-form-item>
         <a-form-item field="model" label="Model"><a-input v-model="providerForm.model" /></a-form-item>
+        <a-form-item field="usageType" label="Usage Type">
+          <a-select v-model="providerForm.usageType">
+            <a-option value="CHAT">Chat</a-option>
+            <a-option value="BOTH">Chat + Embedding</a-option>
+            <a-option value="EMBEDDING">Embedding only</a-option>
+          </a-select>
+        </a-form-item>
+        <template v-if="providerForm.usageType !== 'CHAT'">
+          <a-form-item field="embeddingModel" label="Embedding Model">
+            <a-select v-model="providerForm.embeddingModel" placeholder="选择 embedding 模型" @change="onEmbeddingModelChange">
+              <a-option v-for="opt in embeddingModelOptions" :key="opt.model" :value="opt.model">
+                {{ opt.model }} · {{ opt.dimension }}维（{{ opt.source === 'LOCAL' ? '本地' : '云' }}）
+              </a-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item field="embeddingDimension" label="Embedding Dimension">
+            <a-input-number v-model="providerForm.embeddingDimension" :min="1" disabled style="width: 100%" />
+          </a-form-item>
+        </template>
         <a-form-item field="temperature" label="Temperature"><a-input-number v-model="providerForm.temperature" :min="0" :max="2" :step="0.1" /></a-form-item>
         <a-form-item field="maxTokens" label="Max Tokens"><a-input-number v-model="providerForm.maxTokens" :min="1" :max="100000" /></a-form-item>
         <a-form-item field="timeoutSeconds" label="Timeout Seconds"><a-input-number v-model="providerForm.timeoutSeconds" :min="1" :max="600" /></a-form-item>

@@ -3,6 +3,7 @@ import type { ApiId } from '@/api/system/types'
 import type {
   EmbeddingConfigForm,
   EmbeddingConfigResp,
+  EmbeddingModelOption,
   PageResult,
   ProviderEnabledReq,
   ProviderForm,
@@ -16,6 +17,10 @@ const BASE_URL = '/ai'
 
 export function listEnabledProviders() {
   return request.get<ProviderOptionResp[]>(`${BASE_URL}/providers/enabled`)
+}
+
+export function listEmbeddingModels() {
+  return request.get<EmbeddingModelOption[]>(`${BASE_URL}/admin/providers/embedding-models`)
 }
 
 export function listAdminProviders(params: ProviderQuery) {
