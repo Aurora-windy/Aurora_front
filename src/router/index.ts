@@ -27,6 +27,36 @@ const router = createRouter({
         },
       ],
     },
+    // ===== AI 助手系统（双系统之二：shanxi front-ai 风格独立应用外壳，静态路由，登录即可用）=====
+    {
+      path: '/assistant',
+      name: 'assistant-root',
+      component: () => import('../layouts/AiAppLayout.vue'),
+      redirect: '/assistant/chat',
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: 'chat',
+          name: 'assistant-chat',
+          component: () => import('../views/assistant/AiChatView.vue'),
+        },
+        {
+          path: 'knowledge',
+          name: 'assistant-knowledge',
+          component: () => import('../views/ai/knowledge/index.vue'),
+        },
+        {
+          path: 'graph',
+          name: 'assistant-graph',
+          component: () => import('../views/ai/graph/index.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'assistant-settings',
+          component: () => import('../views/ai/provider/index.vue'),
+        },
+      ],
+    },
   ],
 })
 

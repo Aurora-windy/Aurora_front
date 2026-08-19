@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import { confirmAction, createSession, listMessages, listSessions, rejectAction, streamMessage } from '@/api/ai/chat'
 import { listEnabledProviders } from '@/api/ai/provider'
@@ -18,26 +18,15 @@ const selectedProviderId = ref<string>()
 const input = ref('')
 const useKnowledgeBase = ref(true)
 const pendingAction = ref<ActionResp>()
+const toolResult = ref<ToolResult>()
 const citationDrawerVisible = ref(false)
 const activeCitations = ref<KnowledgeCitation[]>([])
+const messageListRef = ref<HTMLDivElement>()
 /** 正在等待模型首 token 的助手消息（显示"思考中..."） */
 const thinkingIds = ref<Set<string>>(new Set())
 
-function messageCitations(message: ChatMessageResp): KnowledgeCitation[] {
-  if (message.role !== 'assistant') return []
-  const metadata = parseMetadata(message)
-  return metadata?.citations ?? []
-}
-
-function scorePercent(score?: number) {
-  return Math.round((score ?? 0) * 100)
-}
-
-function openCitationDrawer(message: ChatMessageResp) {
-  activeCitations.value = messageCitations(message)
-  citationDrawerVisible.value = true
-}
-const toolResult = ref<ToolResult>()
+/** 示例问题（空会话时展示，点击填入） */
+const examples = ['帮我介绍一下 AURORA 平台', '这个系统有哪些 AI 能力？', '什么是知识图谱？', '把下面的内容整理成要点']
 
 const newSessionForm = reactive({
   title: '',
@@ -69,6 +58,29 @@ function parseMetadata(message: ChatMessageResp) {
   } catch {
     return null
   }
+}
+
+function messageCitations(message: ChatMessageResp): KnowledgeCitation[] {
+  if (message.role !== 'assistant') return []
+  const metadata = parseMetadata(message)
+  return metadata?.citations ?? []
+}
+
+function scorePercent(score?: number) {
+  return Math.round((score ?? 0) * 100)
+}
+
+function openCitationDrawer(message: ChatMessageResp) {
+  activeCitations.value = messageCitations(message)
+  citationDrawerVisible.value = true
+}
+
+function scrollToBottom() {
+  nextTick(() => {
+    if (messageListRef.value) {
+      messageListRef.value.scrollTop = messageListRef.value.scrollHeight
+    }
+  })
 }
 
 async function loadProviders() {
@@ -105,6 +117,7 @@ async function loadMessages(sessionId = currentSessionId.value) {
     const lastAssistant = [...messages.value].reverse().find((item) => item.role === 'assistant')
     const metadata = lastAssistant ? parseMetadata(lastAssistant) : null
     toolResult.value = metadata?.toolResult && Object.keys(metadata.toolResult).length ? metadata.toolResult : undefined
+    scrollToBottom()
   } finally {
     loadingMessages.value = false
   }
@@ -126,6 +139,10 @@ function handleComposerKeydown(e: KeyboardEvent) {
   }
 }
 
+function fillExample(text: string) {
+  input.value = text
+}
+
 async function handleSend() {
   if (!currentSessionId.value) {
     await handleCreateSession()
@@ -135,14 +152,12 @@ async function handleSend() {
   const sessionId = currentSessionId.value
   input.value = ''
   sending.value = true
-  // 乐观插入用户消息（后端在流式链路内落库，此处仅用于即时渲染）
   messages.value.push({
     id: `temp-${Date.now()}`,
     sessionId,
     role: 'user',
     content,
   })
-  // 占位助手消息，流式逐字填充
   const assistantMsg = reactive<ChatMessageResp>({
     id: `temp-${Date.now()}-a`,
     sessionId,
@@ -151,6 +166,7 @@ async function handleSend() {
   })
   messages.value.push(assistantMsg)
   thinkingIds.value.add(assistantMsg.id)
+  scrollToBottom()
   // 节流渲染：40ms 合并一次 token 更新，避免长消息逐字触发 Vue 全量重渲染 + Markdown 重解析导致卡顿
   let pending = ''
   let renderTimer: number | null = null
@@ -158,6 +174,7 @@ async function handleSend() {
     if (pending) {
       assistantMsg.content += pending
       pending = ''
+      scrollToBottom()
     } else if (renderTimer !== null) {
       window.clearInterval(renderTimer)
       renderTimer = null
@@ -244,17 +261,22 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="ai-chat-page">
+  <div class="ai-chat">
+    <!-- 左侧会话面板 -->
     <aside class="session-panel">
-      <div class="panel-title">AI 会话</div>
-      <a-select v-model="selectedProviderId" placeholder="选择模型" allow-clear>
+      <div class="panel-head">
+        <span class="panel-title">AI 会话</span>
+      </div>
+      <a-select v-model="selectedProviderId" placeholder="选择模型" allow-clear size="small">
         <a-option v-for="provider in providers" :key="provider.id" :value="provider.id">
           {{ provider.name }} / {{ provider.model }}
         </a-option>
       </a-select>
-      <a-input v-model="newSessionForm.title" allow-clear placeholder="新会话标题" />
-      <a-button type="primary" long @click="handleCreateSession">新建会话</a-button>
-      <a-spin :loading="loadingSessions">
+      <div class="new-session">
+        <a-input v-model="newSessionForm.title" allow-clear size="small" placeholder="新会话标题" />
+        <a-button type="primary" size="small" @click="handleCreateSession">新建</a-button>
+      </div>
+      <a-spin :loading="loadingSessions" class="session-spin">
         <div class="session-list">
           <button
             v-for="session in sessions"
@@ -263,27 +285,42 @@ onMounted(async () => {
             :class="{ active: session.id === currentSessionId }"
             @click="selectSession(session.id)"
           >
-            <span>{{ session.title }}</span>
-            <small>{{ session.model || '未选择模型' }}</small>
+            <span class="session-title">{{ session.title }}</span>
+            <small class="session-model">{{ session.model || '未选择模型' }}</small>
           </button>
         </div>
       </a-spin>
     </aside>
 
+    <!-- 右侧聊天区 -->
     <main class="chat-main">
       <div class="chat-header">
-        <div>
+        <div class="chat-header-info">
           <h3>{{ currentSession?.title || 'AI 对话' }}</h3>
           <p>{{ currentProvider ? `${currentProvider.name} / ${currentProvider.model}` : '选择模型后开始对话' }}</p>
         </div>
+        <div class="chat-header-actions">
+          <a-button size="small" @click="handleCreateSession">
+            <template #icon><icon-plus /></template>
+            新对话
+          </a-button>
+        </div>
       </div>
-      <a-spin :loading="loadingMessages">
-        <div class="message-list">
-          <a-empty v-if="!messages.length" description="暂无消息" />
+
+      <a-spin :loading="loadingMessages" class="messages-spin">
+        <div ref="messageListRef" class="message-list">
+          <div v-if="!messages.length" class="welcome">
+            <h2>AURORA Agent</h2>
+            <p>我是你的 AI 助手，可以回答问题、检索知识库、操作知识图谱。</p>
+            <div class="example-chips">
+              <button v-for="(exp, i) in examples" :key="i" class="example-chip" @click="fillExample(exp)">{{ exp }}</button>
+            </div>
+          </div>
+
           <div v-for="message in messages" :key="message.id" class="message-row" :class="message.role">
             <div class="message-bubble">
-              <a-card :bordered="false" class="message-card">
-                <template #title>{{ roleText(message.role) }}</template>
+              <div class="message-role">{{ roleText(message.role) }}</div>
+              <div class="message-body">
                 <div v-if="message.role === 'user'" class="message-content">{{ message.content }}</div>
                 <div v-else-if="!message.content && thinkingIds.has(message.id)" class="thinking">
                   <span class="thinking-dots"><i></i><i></i><i></i></span>
@@ -291,7 +328,7 @@ onMounted(async () => {
                 </div>
                 <div v-else-if="!message.content" class="thinking-failed">（未收到回复）</div>
                 <div v-else class="message-content markdown-body" v-html="renderMarkdown(message.content)"></div>
-              </a-card>
+              </div>
               <div v-if="messageCitations(message).length" class="citation-capsules">
                 <button
                   v-for="(cite, i) in messageCitations(message)"
@@ -306,8 +343,24 @@ onMounted(async () => {
               </div>
             </div>
           </div>
+
+          <!-- 待确认操作 / 工具结果（聊天流内卡片） -->
+          <div v-if="pendingAction" class="inline-card">
+            <a-tag color="orange">{{ actionStatusText(pendingAction.status) }}</a-tag>
+            <strong>{{ pendingAction.toolName }}</strong>
+            <p>{{ pendingAction.planSummary }}</p>
+            <p class="risk">{{ pendingAction.riskSummary }}</p>
+            <a-space>
+              <a-button size="small" type="primary" :loading="acting" @click="handleConfirm(pendingAction)">确认执行</a-button>
+              <a-button size="small" status="danger" :loading="acting" @click="handleReject(pendingAction)">拒绝</a-button>
+            </a-space>
+          </div>
+          <div v-if="toolResult" class="inline-card">
+            <a-alert :type="toolResult.success ? 'success' : 'error'" :title="toolResult.summary || toolResult.errorCode || '工具执行结果'" :content="toolResult.errorMessage || JSON.stringify(toolResult.data || {})" />
+          </div>
         </div>
       </a-spin>
+
       <div class="composer">
         <div class="composer-toolbar">
           <a-button
@@ -323,36 +376,11 @@ onMounted(async () => {
           <a-textarea v-model="input" placeholder="输入问题，Enter 发送，Shift+Enter 换行" :auto-size="{ minRows: 3, maxRows: 6 }" @keydown="handleComposerKeydown" />
           <a-button type="primary" :loading="sending" @click="handleSend">发送</a-button>
         </div>
+        <p class="composer-note">内容由大模型生成，仅供学习交流参考，其准确性无法保证</p>
       </div>
     </main>
 
-    <aside class="context-panel">
-      <div class="panel-title">上下文</div>
-      <a-descriptions :column="1" size="small" bordered>
-        <a-descriptions-item label="模型">{{ currentProvider?.model || currentSession?.model || '-' }}</a-descriptions-item>
-        <a-descriptions-item label="服务商">{{ currentProvider?.name || '-' }}</a-descriptions-item>
-      </a-descriptions>
-
-      <a-card title="待确认操作" :bordered="false">
-        <a-empty v-if="!pendingAction" description="暂无待确认操作" />
-        <div v-else class="action-card">
-          <a-tag color="orange">{{ actionStatusText(pendingAction.status) }}</a-tag>
-          <h4>{{ pendingAction.toolName }}</h4>
-          <p>{{ pendingAction.planSummary }}</p>
-          <p class="risk">{{ pendingAction.riskSummary }}</p>
-          <a-space>
-            <a-button type="primary" :loading="acting" @click="handleConfirm(pendingAction)">确认执行</a-button>
-            <a-button status="danger" :loading="acting" @click="handleReject(pendingAction)">拒绝</a-button>
-          </a-space>
-        </div>
-      </a-card>
-
-      <a-card title="工具执行结果" :bordered="false">
-        <a-empty v-if="!toolResult" description="暂无工具执行结果" />
-        <a-alert v-else :type="toolResult.success ? 'success' : 'error'" :title="toolResult.summary || toolResult.errorCode || '工具执行结果'" :content="toolResult.errorMessage || JSON.stringify(toolResult.data || {})" />
-      </a-card>
-    </aside>
-
+    <!-- 引用详情 -->
     <a-drawer
       :visible="citationDrawerVisible"
       :width="440"
@@ -377,51 +405,74 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.ai-chat-page {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 360px;
-  gap: 16px;
-  min-height: calc(100vh - 140px);
+.ai-chat {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  box-sizing: border-box;
+  background: var(--color-bg-1);
 }
 
-.session-panel,
-.chat-main,
-.context-panel {
-  background: var(--color-bg-2);
-  border-radius: 10px;
-  padding: 16px;
-}
-
-.session-panel,
-.context-panel {
+/* ===== 左侧会话面板 ===== */
+.session-panel {
+  flex: 0 0 250px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  padding: 16px 14px;
+  border-right: 1px solid var(--color-border-2);
+  background: var(--color-bg-2);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .panel-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
+}
+
+.new-session {
+  display: flex;
+  gap: 8px;
+}
+
+.session-spin {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .session-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  height: 100%;
+  overflow: auto;
+  padding-right: 2px;
 }
 
 .session-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
-  padding: 10px;
+  padding: 9px 10px;
   border: 1px solid var(--color-border-2);
   border-radius: 8px;
   text-align: left;
   background: var(--color-bg-1);
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.session-item:hover {
+  border-color: rgb(var(--primary-6));
 }
 
 .session-item.active {
@@ -429,38 +480,102 @@ onMounted(async () => {
   background: rgb(var(--primary-1));
 }
 
+.session-title {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-model {
+  color: var(--color-text-3);
+  font-size: 11px;
+}
+
+/* ===== 右侧聊天区 ===== */
 .chat-main {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 .chat-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 14px 24px;
   border-bottom: 1px solid var(--color-border-2);
-  margin-bottom: 12px;
+  background: var(--color-bg-2);
 }
 
 .chat-header h3 {
   margin: 0;
+  font-size: 16px;
 }
 
 .chat-header p {
-  margin: 6px 0 12px;
+  margin: 4px 0 0;
   color: var(--color-text-3);
+  font-size: 12px;
+}
+
+.messages-spin {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .message-list {
   flex: 1;
-  min-height: 420px;
-  max-height: calc(100vh - 310px);
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-right: 4px;
+  gap: 14px;
+  padding: 20px 24px;
+}
+
+.welcome {
+  margin: auto;
+  text-align: center;
+  max-width: 520px;
+}
+
+.welcome h2 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  color: rgb(var(--primary-6));
+}
+
+.welcome p {
+  margin: 0 0 18px;
+  color: var(--color-text-3);
+}
+
+.example-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.example-chip {
+  padding: 8px 16px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 16px;
+  font-size: 13px;
+  color: var(--color-text-2);
+  background: var(--color-bg-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.example-chip:hover {
+  border-color: rgb(var(--primary-6));
+  color: rgb(var(--primary-6));
 }
 
 .message-row {
@@ -482,8 +597,25 @@ onMounted(async () => {
   align-items: flex-end;
 }
 
-.message-card {
+.message-role {
+  font-size: 11px;
+  color: var(--color-text-4);
+}
+
+.message-body {
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--color-fill-2);
+}
+
+.message-row.user .message-body {
+  background: rgb(var(--primary-1));
+}
+
+.message-content {
   white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 /* 思考中提示 */
@@ -536,39 +668,6 @@ onMounted(async () => {
   color: var(--color-text-4);
 }
 
-.message-row.user .message-card {
-  background: rgb(var(--primary-1));
-}
-
-.composer {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.composer-toolbar {
-  display: flex;
-  gap: 8px;
-}
-
-.composer-input {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.action-card,
-.citation-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.risk {
-  color: rgb(var(--orange-6));
-}
-
 .citation-capsules {
   display: flex;
   flex-wrap: wrap;
@@ -591,7 +690,7 @@ onMounted(async () => {
   font-size: 12px;
   line-height: 1.6;
   cursor: pointer;
-  transition: border-color .2s, color .2s;
+  transition: border-color 0.2s, color 0.2s;
 }
 
 .citation-capsule:hover {
@@ -604,6 +703,56 @@ onMounted(async () => {
   font-weight: 600;
 }
 
+.inline-card {
+  align-self: center;
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-2);
+  border-radius: 10px;
+  background: var(--color-bg-2);
+}
+
+.inline-card p {
+  margin: 0;
+}
+
+.risk {
+  color: rgb(var(--orange-6));
+}
+
+/* ===== 输入区 ===== */
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 24px 14px;
+  border-top: 1px solid var(--color-border-2);
+  background: var(--color-bg-2);
+}
+
+.composer-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.composer-input {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.composer-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-text-4);
+  text-align: center;
+}
+
+/* ===== 引用详情 ===== */
 .cite-detail-list {
   display: flex;
   flex-direction: column;
@@ -629,18 +778,12 @@ onMounted(async () => {
 
 .cite-detail-title {
   font-weight: 600;
-  color: var(--color-text-title);
 }
 
 .cite-detail-score {
   color: rgb(var(--primary-6));
   font-weight: 600;
   font-size: 12px;
-  white-space: nowrap;
-}
-
-.cite-detail-bar {
-  width: 100%;
 }
 
 .cite-detail-snippet {

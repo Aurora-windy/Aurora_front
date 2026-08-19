@@ -183,5 +183,5 @@ onMounted(loadData)
 
 <style scoped>
 .edu-page { display: flex; flex-direction: column; gap: 16px; }
-.page-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: #fff; border: 1px solid #e5e6eb; border-radius: 8px; }
+.page-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 8px; }
 </style>

@@ -265,8 +265,8 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 16px;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #e5e6eb;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
 }
 </style>

@@ -7,6 +7,7 @@ import type {
   KnowledgeDocResp,
   KnowledgePublishResp,
   KnowledgeSearchReq,
+  KnowledgeUploadResp,
   PageResult,
 } from './types'
 
@@ -14,6 +15,12 @@ const BASE_URL = '/ai/admin/knowledge-docs'
 
 export function listKnowledgeDocs(params: KnowledgeDocQuery) {
   return request.get<PageResult<KnowledgeDocResp>>(BASE_URL, { params })
+}
+
+export function uploadKnowledgeDoc(file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  return request.post<KnowledgeUploadResp>(`${BASE_URL}/upload`, form)
 }
 
 export function getKnowledgeDoc(id: ApiId) {

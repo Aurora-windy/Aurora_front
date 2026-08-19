@@ -32,6 +32,7 @@ const iconMap: Record<string, string> = {
   IconCode: 'icon-code',
   IconShoppingCart: 'icon-shopping-cart',
   IconFile: 'icon-file',
+  IconGraph: 'icon-file',
 }
 
 function iconName(icon?: string) {
@@ -150,6 +151,10 @@ async function handleLogout() {
           </a-breadcrumb>
         </div>
         <div class="header-right">
+          <a-button class="assistant-entry" type="primary" @click="router.push('/assistant/chat')">
+            <template #icon><icon-robot /></template>
+            AI 助手系统
+          </a-button>
           <a-dropdown trigger="click">
             <div class="user-info">
               <a-avatar :size="28" class="user-avatar">

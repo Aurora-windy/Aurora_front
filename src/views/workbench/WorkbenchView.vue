@@ -195,7 +195,7 @@ const stageItems = [
 
 /* === 欢迎卡 === */
 .welcome-card {
-  background: #23439A;
+  background: var(--color-primary);
   border-radius: 8px;
   padding: 24px 32px;
 }
@@ -242,14 +242,14 @@ const stageItems = [
   justify-content: space-between;
   min-height: 56px;
   padding: 0 18px;
-  border: 1px solid #E5E6EB;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: #FFFFFF;
+  background: var(--color-bg-card);
 }
 
 .stage-label {
   font-size: 14px;
-  color: #4E5969;
+  color: var(--color-text-body);
 }
 
 /* === 核心模块 === */
@@ -266,15 +266,15 @@ const stageItems = [
   min-height: 142px;
   padding: 16px;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: var(--color-bg-hover);
   border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .module-stat:hover {
-  background: #FFFFFF;
-  border-color: #BEDAFF;
+  background: var(--color-bg-card);
+  border-color: var(--color-primary-light);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -298,13 +298,13 @@ const stageItems = [
 .module-stat-title {
   font-size: 14px;
   font-weight: 600;
-  color: #1F2329;
+  color: var(--color-text-title);
 }
 
 .module-stat-desc {
   font-size: 12px;
   line-height: 20px;
-  color: #86909C;
+  color: var(--color-text-secondary);
 }
 
 /* === 系统状态 === */
@@ -318,7 +318,7 @@ const stageItems = [
   justify-content: space-between;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid #F2F3F5;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .status-item:last-child {
@@ -327,7 +327,7 @@ const stageItems = [
 
 .status-label {
   font-size: 14px;
-  color: #4E5969;
+  color: var(--color-text-body);
 }
 
 /* === 系统公告 === */
@@ -343,8 +343,8 @@ const stageItems = [
   gap: 8px;
   padding: 10px 0;
   font-size: 14px;
-  color: #4E5969;
-  border-bottom: 1px solid #F2F3F5;
+  color: var(--color-text-body);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .notice-item:last-child {
@@ -355,7 +355,7 @@ const stageItems = [
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #3370FF;
+  background: var(--color-primary);
   flex-shrink: 0;
 }
 
@@ -367,7 +367,7 @@ const stageItems = [
 .section-card :deep(.arco-card-header-title) {
   font-size: 16px;
   font-weight: 500;
-  color: #1F2329;
+  color: var(--color-text-title);
 }
 
 .section-card :deep(.arco-card-body) {

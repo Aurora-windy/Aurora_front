@@ -1,0 +1,91 @@
+/* ============================================================
+ * Markdown 消息排版（聊天消息 v-html 渲染用）
+ * scoped 样式对 v-html 注入内容无效，故放全局。
+ * ============================================================ */
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.markdown-body p {
+  margin: 0 0 8px;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: 10px 0 6px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.markdown-body li {
+  margin: 2px 0;
+}
+
+.markdown-body code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--color-fill-2);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+}
+
+.markdown-body pre {
+  position: relative;
+  margin: 8px 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f6f8fa;
+  overflow-x: auto;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.markdown-body blockquote {
+  margin: 8px 0;
+  padding: 4px 12px;
+  border-left: 3px solid rgb(var(--primary-6));
+  color: var(--color-text-3);
+  background: var(--color-fill-1);
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 8px 0;
+  width: 100%;
+  font-size: 13px;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border-2);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--color-fill-2);
+  font-weight: 600;
+}
+
+.markdown-body a {
+  color: rgb(var(--primary-6));
+}

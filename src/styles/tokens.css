@@ -4,7 +4,7 @@
    ============================================ */
 
 :root {
-  /* === 主色 Primary — 深海蓝 === */
+  /* === 主色 Primary — 深海蓝 #1E3A8A（2026-08-13 定调：#3370FF 太亮、#1A1F36 太黑，取中间深海蓝） === */
   --color-primary:        #1E3A8A;
   --color-primary-hover:  #172554;
   --color-primary-active: #0F1D45;

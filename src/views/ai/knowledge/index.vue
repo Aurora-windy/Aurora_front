@@ -11,12 +11,14 @@ import {
   rebuildKnowledgeEmbedding,
   searchKnowledge,
   updateKnowledgeDoc,
+  uploadKnowledgeDoc,
 } from '@/api/ai/knowledge'
 import type { KnowledgeCitation, KnowledgeDocForm, KnowledgeDocQuery, KnowledgeDocResp } from '@/api/ai/types'
 
 const loading = ref(false)
 const saving = ref(false)
 const publishing = ref(false)
+const uploading = ref(false)
 const rows = ref<KnowledgeDocResp[]>([])
 const total = ref(0)
 const dialogVisible = ref(false)
@@ -45,12 +47,13 @@ const searchForm = reactive({
 
 const columns = [
   { title: '标题', dataIndex: 'title', ellipsis: true, tooltip: true },
-  { title: '类型', dataIndex: 'type', width: 160 },
-  { title: '状态', slotName: 'status', width: 130 },
-  { title: '版本', dataIndex: 'version', width: 90 },
-  { title: '发布时间', dataIndex: 'publishedAt', width: 180 },
-  { title: '创建时间', dataIndex: 'createTime', width: 180 },
-  { title: '操作', slotName: 'actions', width: 360 },
+  { title: '类型', dataIndex: 'type', width: 130 },
+  { title: '原文件', slotName: 'fileUrl', width: 110 },
+  { title: '状态', slotName: 'status', width: 110 },
+  { title: '版本', dataIndex: 'version', width: 80 },
+  { title: '发布时间', dataIndex: 'publishedAt', width: 170 },
+  { title: '创建时间', dataIndex: 'createTime', width: 170 },
+  { title: '操作', slotName: 'actions', width: 340 },
 ]
 
 function statusColor(status?: string) {
@@ -64,6 +67,10 @@ function statusText(status?: string) {
   if (status === 'OFFLINE') return '已下线'
   if (status === 'DRAFT') return '草稿'
   return status || '-'
+}
+
+function scorePercent(score?: number) {
+  return Math.round((score ?? 0) * 100)
 }
 
 function resetForm() {
@@ -195,6 +202,35 @@ function handlePageSizeChange(pageSize: number) {
   loadData()
 }
 
+/** 原生文件选择框（点「从本地上传」按钮直接触发 input.click()，一步弹出系统选择框） */
+const fileInputRef = ref<HTMLInputElement>()
+
+function handleFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // 允许重复选择同一文件
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    Message.error('文件过大，请上传 5MB 以内的文件')
+    return
+  }
+  uploading.value = true
+  uploadKnowledgeDoc(file)
+    .then((resp) => {
+      Message.success(resp.message)
+      if (resp.fileUrl) {
+        Message.info(`原文件已保存，可访问：${resp.fileUrl}`)
+      }
+      loadData()
+    })
+    .catch((err: Error) => {
+      Message.error(err.message || '上传失败')
+    })
+    .finally(() => {
+      uploading.value = false
+    })
+}
+
 onMounted(loadData)
 </script>
 
@@ -211,7 +247,19 @@ onMounted(loadData)
         </a-select>
         <a-button type="primary" @click="handleSearch">查询</a-button>
         <a-button @click="handleReset">重置</a-button>
-        <a-button type="primary" @click="openAdd">新增文档</a-button>
+        <!-- 点「从本地上传」直接弹系统文件选择框（不依赖拖拽，无中间弹窗） -->
+        <input
+          ref="fileInputRef"
+          type="file"
+          class="file-input-hidden"
+          accept=".txt,.md,.markdown,.csv,.docx,.xlsx"
+          @change="handleFileChange"
+        />
+        <a-button type="primary" :loading="uploading" @click="fileInputRef?.click()">
+          <template #icon><icon-upload /></template>
+          从本地上传
+        </a-button>
+        <a-button @click="openAdd">新增文档</a-button>
       </a-space>
     </div>
 
@@ -221,8 +269,19 @@ onMounted(loadData)
         <a-input-number v-model="searchForm.topK" :min="1" :max="20" />
         <a-button @click="handleKnowledgeSearch">检索知识</a-button>
       </a-space>
-      <div v-if="citations.length" class="citation-list">
-        <a-alert v-for="item in citations" :key="item.chunkId" type="info" :title="`${item.docTitle} (${item.score ?? 0})`" :content="item.snippet" />
+      <div v-if="citations.length" class="search-result-grid">
+        <div v-for="(item, i) in citations" :key="item.chunkId ?? i" class="search-result-card">
+          <div class="result-head">
+            <span class="result-title">{{ item.docTitle }}</span>
+            <a-tag size="small" color="arcoblue">{{ item.docType }}</a-tag>
+          </div>
+          <div class="result-score">
+            <span class="result-score-label">相似度</span>
+            <a-progress class="result-bar" :percent="scorePercent(item.score)" size="mini" :show-text="false" />
+            <span class="result-score-num">{{ scorePercent(item.score) }}%</span>
+          </div>
+          <div class="result-snippet">{{ item.snippet }}</div>
+        </div>
       </div>
     </a-card>
 
@@ -237,6 +296,13 @@ onMounted(loadData)
     >
       <template #status="{ record }">
         <a-tag :color="statusColor(record.status)">{{ statusText(record.status) }}</a-tag>
+      </template>
+      <template #fileUrl="{ record }">
+        <a-link v-if="record.fileUrl" :href="record.fileUrl" target="_blank">
+          <icon-file />
+          查看
+        </a-link>
+        <span v-else class="no-file">-</span>
       </template>
       <template #actions="{ record }">
         <a-space>
@@ -267,16 +333,85 @@ onMounted(loadData)
   gap: 16px;
 }
 
-.page-toolbar,
-.citation-list {
+.page-toolbar {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.search-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.search-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-card);
+}
+
+.result-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-title {
+  font-weight: 600;
+  color: var(--color-text-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.result-score-label {
+  white-space: nowrap;
+}
+
+.result-bar {
+  flex: 1;
+  min-width: 60px;
+}
+
+.result-score-num {
+  color: rgb(var(--primary-6));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.result-snippet {
+  color: var(--color-text-body);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .page-toolbar {
   padding: 16px;
   background: var(--color-bg-2);
   border-radius: 8px;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.no-file {
+  color: var(--color-text-4);
 }
 </style>

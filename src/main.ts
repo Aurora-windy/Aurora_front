@@ -12,6 +12,7 @@ import './styles/tokens.css'        // CSS 变量 Token
 import './styles/arco-theme.css'    // Arco Design Token 覆盖
 import './styles/global.css'        // 全局基础样式 + Arco 组件覆盖
 import './styles/aurora.css'        // 极光装饰工具类
+import './styles/markdown.css'      // Markdown 消息排版（聊天 v-html 渲染）
 
 const app = createApp(App)
 

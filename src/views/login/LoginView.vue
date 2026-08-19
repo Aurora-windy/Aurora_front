@@ -165,7 +165,7 @@ onMounted(refreshCaptcha)
 .login-page {
   min-height: 100vh;
   display: flex;
-  background: #FAFAFA;
+  background: var(--color-bg-page);
 }
 
 /* === 左侧 Hero 区 === */
@@ -250,7 +250,7 @@ onMounted(refreshCaptcha)
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FFFFFF;
+  background: var(--color-bg-card);
   flex-shrink: 0;
 }
 
@@ -265,14 +265,14 @@ onMounted(refreshCaptcha)
 .login-header h2 {
   font-size: 24px;
   font-weight: 600;
-  color: #1F2329;
+  color: var(--color-text-title);
   margin: 0 0 8px;
 }
 
 .login-header p {
   font-size: 14px;
   font-weight: 400;
-  color: #86909C;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -288,7 +288,7 @@ onMounted(refreshCaptcha)
   height: 40px;
   width: 120px;
   cursor: pointer;
-  border: 1px solid #E5E6EB;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   object-fit: cover;
   transition: opacity 0.15s ease;
@@ -304,17 +304,17 @@ onMounted(refreshCaptcha)
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #E5E6EB;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  color: #C9CDD4;
+  color: var(--color-text-placeholder);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .captcha-placeholder:hover {
-  color: #1E3A8A;
-  border-color: #1E3A8A;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 /* 登录按钮 */
@@ -328,6 +328,6 @@ onMounted(refreshCaptcha)
   margin-top: 20px;
   text-align: center;
   font-size: 12px;
-  color: #C9CDD4;
+  color: var(--color-text-placeholder);
 }
 </style>

@@ -129,6 +129,15 @@ export interface KnowledgePublishResp {
   skippedCount: number
 }
 
+export interface KnowledgeUploadResp {
+  docId: ApiId
+  fileName: string
+  fileUrl: string
+  chars: number
+  published: boolean
+  message: string
+}
+
 export interface KnowledgeCitation {
   docId: ApiId
   docTitle: string
@@ -150,6 +159,7 @@ export interface CreateSessionReq {
 
 export interface SendMessageReq {
   content: string
+  useKnowledgeBase?: boolean
 }
 
 export interface ChatSessionResp {

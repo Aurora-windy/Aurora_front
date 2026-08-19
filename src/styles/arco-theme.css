@@ -10,14 +10,14 @@
   /* --color-primary* 在 tokens.css 中定义；未来接入 continew 主题时只改 tokens。 */
   --primary-1: var(--color-primary-bg-rgb);
   --primary-2: var(--color-primary-light-rgb);
-  --primary-3: 147, 197, 253;
-  --primary-4: 96, 165, 250;
+  --primary-3: 147, 197, 253;   /* 浅蓝（深海蓝 #1E3A8A 色阶） */
+  --primary-4: 96, 165, 250;    /* 中浅蓝 */
   --primary-5: var(--color-primary-rgb);
   --primary-6: var(--color-primary-rgb);
   --primary-7: var(--color-primary-hover-rgb);
   --primary-8: var(--color-primary-active-rgb);
-  --primary-9: 10, 20, 50;
-  --primary-10: 5, 10, 30;
+  --primary-9: 10, 20, 50;      /* 深蓝 */
+  --primary-10: 5, 10, 30;      /* 更深蓝 */
 
   /* === 字体族覆盖 === */
   --font-family: 'Inter', 'PingFang SC', 'Noto Sans SC',
