@@ -117,11 +117,12 @@ import {
   deleteAllGraph,
   deleteGraphEntity,
   getGraphInfo,
+  getGraphTaskStatus,
   sampleGraphNodes,
   searchGraphEntity,
   uploadGraphDocument,
 } from '@/api/ai/graph'
-import type { GraphDataResp, GraphInfoResp } from '@/api/ai/graph'
+import type { GraphDataResp, GraphInfoResp, GraphTaskResp } from '@/api/ai/graph'
 
 const containerRef = ref<HTMLDivElement>()
 const searchInput = ref('')
@@ -222,6 +223,35 @@ function handleDeleteAll() {
 /** 原生文件选择框（点按钮触发 input.click()，100% 弹出系统选择框） */
 const fileInputRef = ref<HTMLInputElement>()
 
+/**
+ * 轮询异步抽取任务直到终态。
+ *
+ * 背景：图谱抽取要跑一次 LLM 生成，慢时可达分钟级，同步等待必然超过 30 秒请求超时。
+ * 后端已改为提交后台任务后立即返回 taskId，这里靠轮询拿结果——每次轮询都是独立的短请求，
+ * 不会撞超时上限。
+ */
+function waitForGraphTask(taskId: string, timeoutMs = 5 * 60 * 1000) {
+  const deadline = Date.now() + timeoutMs
+  return new Promise<GraphTaskResp>((resolve, reject) => {
+    const tick = () => {
+      getGraphTaskStatus(taskId)
+        .then((resp) => {
+          if (resp.status !== 'PROCESSING') {
+            resolve(resp)
+            return
+          }
+          if (Date.now() > deadline) {
+            reject(new Error('抽取耗时过长，请稍后刷新图谱查看结果'))
+            return
+          }
+          setTimeout(tick, 2000)
+        })
+        .catch((err: Error) => reject(err))
+    }
+    tick()
+  })
+}
+
 function handleFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -233,8 +263,18 @@ function handleFileChange(e: Event) {
   }
   uploading.value = true
   uploadGraphDocument(file)
-    .then(() => {
-      Message.success('上传成功，已抽取实体关系入库')
+    .then(async (resp) => {
+      const result = await waitForGraphTask(resp.taskId)
+      if (result.status !== 'SUCCESS') {
+        Message.warning(result.message || '图谱抽取未成功完成，请重试')
+        return
+      }
+      if (result.triples > 0) {
+        Message.success(`上传成功，已抽取 ${result.triples} 条实体关系`)
+      } else {
+        // 后端把"为什么没抽到"塞进了 message——前端直接展示，用户不用翻日志
+        Message.warning(result.message || '上传成功，但文档未抽取到实体关系')
+      }
       loadInfo()
       loadSample()
     })

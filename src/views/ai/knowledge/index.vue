@@ -13,7 +13,13 @@ import {
   updateKnowledgeDoc,
   uploadKnowledgeDoc,
 } from '@/api/ai/knowledge'
-import type { KnowledgeCitation, KnowledgeDocForm, KnowledgeDocQuery, KnowledgeDocResp } from '@/api/ai/types'
+import type {
+  KnowledgeCitation,
+  KnowledgeDocForm,
+  KnowledgeDocQuery,
+  KnowledgeDocResp,
+} from '@/api/ai/types'
+import type { ApiId } from '@/api/system/types'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -58,12 +64,14 @@ const columns = [
 
 function statusColor(status?: string) {
   if (status === 'PUBLISHED') return 'green'
+  if (status === 'PROCESSING') return 'blue'
   if (status === 'OFFLINE') return 'orange'
   return 'gray'
 }
 
 function statusText(status?: string) {
   if (status === 'PUBLISHED') return '已发布'
+  if (status === 'PROCESSING') return '处理中'
   if (status === 'OFFLINE') return '已下线'
   if (status === 'DRAFT') return '草稿'
   return status || '-'
@@ -205,6 +213,34 @@ function handlePageSizeChange(pageSize: number) {
 /** 原生文件选择框（点「从本地上传」按钮直接触发 input.click()，一步弹出系统选择框） */
 const fileInputRef = ref<HTMLInputElement>()
 
+/**
+ * 轮询文档状态直到异步发布落定。
+ *
+ * 背景：发布要跑切分 + 向量化 + 图谱抽取，分块一多必然超过 30 秒请求超时。
+ * 后端已改为提交后台任务后立即返回，这里改用短请求轮询，不再受单次请求超时限制。
+ */
+function waitForDocStatus(docId: ApiId, timeoutMs = 5 * 60 * 1000) {
+  const deadline = Date.now() + timeoutMs
+  return new Promise<string>((resolve, reject) => {
+    const tick = () => {
+      getKnowledgeDoc(docId)
+        .then((resp) => {
+          if (resp.status !== 'PROCESSING') {
+            resolve(resp.status ?? '')
+            return
+          }
+          if (Date.now() > deadline) {
+            reject(new Error('文档处理耗时过长，请稍后刷新列表查看结果'))
+            return
+          }
+          setTimeout(tick, 2000)
+        })
+        .catch((err: Error) => reject(err))
+    }
+    tick()
+  })
+}
+
 function handleFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
@@ -216,10 +252,17 @@ function handleFileChange(e: Event) {
   }
   uploading.value = true
   uploadKnowledgeDoc(file)
-    .then((resp) => {
+    .then(async (resp) => {
       Message.success(resp.message)
       if (resp.fileUrl) {
         Message.info(`原文件已保存，可访问：${resp.fileUrl}`)
+      }
+      // 轮询到结果落定再刷新列表，避免用户只看到「处理中」就离开
+      const status = await waitForDocStatus(resp.docId)
+      if (status === 'PUBLISHED') {
+        Message.success('文档已解析入库')
+      } else {
+        Message.warning('文档未发布成功，可在列表页手动重试发布')
       }
       loadData()
     })
@@ -242,6 +285,7 @@ onMounted(loadData)
         <a-input v-model="query.type" allow-clear placeholder="类型" />
         <a-select v-model="query.status" allow-clear placeholder="状态" style="width: 150px">
           <a-option value="DRAFT">草稿</a-option>
+          <a-option value="PROCESSING">处理中</a-option>
           <a-option value="PUBLISHED">已发布</a-option>
           <a-option value="OFFLINE">已下线</a-option>
         </a-select>

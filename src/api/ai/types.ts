@@ -1,6 +1,6 @@
 import type { ApiId, PageQuery } from '@/api/system/types'
 
-export type ProviderUsageType = 'CHAT' | 'EMBEDDING' | 'BOTH'
+export type ProviderUsageType = 'CHAT' | 'EMBEDDING' | 'BOTH' | 'GRAPH'
 
 export interface PageResult<T> {
   list: T[]
@@ -219,6 +219,13 @@ export interface ToolResult {
   summary?: string
   errorCode?: string
   errorMessage?: string
+}
+
+/** 工具调用过程提示（T5：FC 循环期间的页面步骤指示，phase: start/success/failed/pending） */
+export interface ToolStatus {
+  toolName: string
+  round: number
+  phase: 'start' | 'success' | 'failed' | 'pending'
 }
 
 export interface ChatSendResp {

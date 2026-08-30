@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { confirmAction, createSession, listMessages, listSessions, rejectAction, streamMessage } from '@/api/ai/chat'
+import { confirmAction, createSession, listMessages, listSessions, rejectAction, resumeStream, streamMessage } from '@/api/ai/chat'
+import type { StreamHandlers } from '@/api/ai/chat'
 import { listEnabledProviders } from '@/api/ai/provider'
 import { renderMarkdown } from '@/utils/markdown'
 import type { ActionResp, ChatMessageResp, ChatSessionResp, KnowledgeCitation, ProviderOptionResp, ToolResult } from '@/api/ai/types'
@@ -24,6 +25,34 @@ const activeCitations = ref<KnowledgeCitation[]>([])
 const messageListRef = ref<HTMLDivElement>()
 /** 正在等待模型首 token 的助手消息（显示"思考中..."） */
 const thinkingIds = ref<Set<string>>(new Set())
+
+/** 工具调用步骤（T5）：流式期间按消息 id 收集 toolStatus 事件；刷新后从 metadata.toolTrace 读取 */
+interface ToolStep {
+  round: number
+  toolName: string
+  status: string
+}
+const liveSteps = reactive(new Map<string, ToolStep[]>())
+
+function toolStepsOf(message: ChatMessageResp): ToolStep[] {
+  const live = liveSteps.get(message.id)
+  if (live?.length) return live
+  const metadata = parseMetadata(message)
+  return (metadata?.toolTrace ?? []) as ToolStep[]
+}
+
+function toolStepText(step: ToolStep) {
+  const phase = step.status === 'start'
+    ? '调用中…'
+    : step.status === 'success'
+      ? '调用成功'
+      : step.status === 'failed'
+        ? '调用失败'
+        : step.status === 'pending'
+          ? '等待确认'
+          : step.status
+  return `第 ${step.round} 轮 · ${step.toolName} · ${phase}`
+}
 
 /** 示例问题（空会话时展示，点击填入） */
 const examples = ['帮我介绍一下 AURORA 平台', '这个系统有哪些 AI 能力？', '什么是知识图谱？', '把下面的内容整理成要点']
@@ -143,6 +172,96 @@ function fillExample(text: string) {
   input.value = text
 }
 
+/**
+ * 占位助手消息 + 流式机械（T5 抽取，发送与续聊共用）：
+ * 40ms 合并一次 token 更新，避免长消息逐字触发 Vue 全量重渲染 + Markdown 重解析导致卡顿。
+ */
+function beginAssistantStream(): { handlers: StreamHandlers; finish: () => void } {
+  const sessionId = currentSessionId.value!
+  const assistantMsg = reactive<ChatMessageResp>({
+    id: `temp-${Date.now()}-a`,
+    sessionId,
+    role: 'assistant',
+    content: '',
+  })
+  messages.value.push(assistantMsg)
+  thinkingIds.value.add(assistantMsg.id)
+  scrollToBottom()
+  let pending = ''
+  let renderTimer: number | null = null
+  const flushBuffer = () => {
+    if (pending) {
+      assistantMsg.content += pending
+      pending = ''
+      scrollToBottom()
+    } else if (renderTimer !== null) {
+      window.clearInterval(renderTimer)
+      renderTimer = null
+    }
+  }
+  const clearTimer = () => {
+    if (renderTimer !== null) {
+      window.clearInterval(renderTimer)
+      renderTimer = null
+    }
+  }
+  const handlers: StreamHandlers = {
+    onToken: (delta) => {
+      pending += delta
+      thinkingIds.value.delete(assistantMsg.id)
+      if (renderTimer === null) {
+        renderTimer = window.setInterval(flushBuffer, 40)
+      }
+    },
+    onDone: (payload) => {
+      // 工具步骤跟随真实 messageId（刷新后由服务端 metadata.toolTrace 提供）
+      const steps = liveSteps.get(assistantMsg.id)
+      if (steps?.length && payload.messageId) {
+        liveSteps.set(String(payload.messageId), steps)
+        liveSteps.delete(assistantMsg.id)
+      }
+      assistantMsg.id = payload.messageId
+      if (payload.citations && payload.citations.length) {
+        assistantMsg.metadataJson = JSON.stringify({ citations: payload.citations })
+      }
+    },
+    onPending: (action) => {
+      pendingAction.value = action
+    },
+    onToolResult: (result) => {
+      toolResult.value = result
+    },
+    onToolStatus: (status) => {
+      const steps = liveSteps.get(assistantMsg.id) ?? []
+      // start 行在收到 success/failed 时原位更新；pending（mutation 挂起）独立成行
+      const idx = status.phase === 'start'
+        ? -1
+        : steps.findIndex((s) => s.round === status.round && s.toolName === status.toolName && s.status === 'start')
+      if (idx >= 0) {
+        steps[idx] = { round: status.round, toolName: status.toolName, status: status.phase }
+      } else {
+        steps.push({ round: status.round, toolName: status.toolName, status: status.phase })
+      }
+      liveSteps.set(assistantMsg.id, steps)
+      scrollToBottom()
+    },
+    onError: (message) => {
+      clearTimer()
+      flushBuffer()
+      assistantMsg.content += `\n\n（出错：${message}）`
+      Message.error(message)
+    },
+  }
+  return {
+    handlers,
+    finish: () => {
+      clearTimer()
+      flushBuffer()
+      thinkingIds.value.delete(assistantMsg.id)
+    },
+  }
+}
+
 async function handleSend() {
   if (!currentSessionId.value) {
     await handleCreateSession()
@@ -158,74 +277,31 @@ async function handleSend() {
     role: 'user',
     content,
   })
-  const assistantMsg = reactive<ChatMessageResp>({
-    id: `temp-${Date.now()}-a`,
-    sessionId,
-    role: 'assistant',
-    content: '',
-  })
-  messages.value.push(assistantMsg)
-  thinkingIds.value.add(assistantMsg.id)
-  scrollToBottom()
-  // 节流渲染：40ms 合并一次 token 更新，避免长消息逐字触发 Vue 全量重渲染 + Markdown 重解析导致卡顿
-  let pending = ''
-  let renderTimer: number | null = null
-  const flushBuffer = () => {
-    if (pending) {
-      assistantMsg.content += pending
-      pending = ''
-      scrollToBottom()
-    } else if (renderTimer !== null) {
-      window.clearInterval(renderTimer)
-      renderTimer = null
-    }
-  }
-  const appendToken = (delta: string) => {
-    pending += delta
-    thinkingIds.value.delete(assistantMsg.id)
-    if (renderTimer === null) {
-      renderTimer = window.setInterval(flushBuffer, 40)
-    }
-  }
-  const clearTimer = () => {
-    if (renderTimer !== null) {
-      window.clearInterval(renderTimer)
-      renderTimer = null
-    }
-  }
+  const stream = beginAssistantStream()
   try {
-    await streamMessage(sessionId, { content, useKnowledgeBase: useKnowledgeBase.value }, {
-      onToken: (delta) => appendToken(delta),
-      onDone: (payload) => {
-        assistantMsg.id = payload.messageId
-        if (payload.citations && payload.citations.length) {
-          assistantMsg.metadataJson = JSON.stringify({ citations: payload.citations })
-        }
-      },
-      onPending: (action) => {
-        pendingAction.value = action
-      },
-      onToolResult: (result) => {
-        toolResult.value = result
-      },
-      onError: (message) => {
-        clearTimer()
-        flushBuffer()
-        assistantMsg.content += `\n\n（出错：${message}）`
-        Message.error(message)
-      },
-    })
+    await streamMessage(sessionId, { content, useKnowledgeBase: useKnowledgeBase.value }, stream.handlers)
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
-    clearTimer()
-    flushBuffer()
-    assistantMsg.content += `\n\n（请求失败：${msg}）`
-    Message.error('对话请求失败，请稍后重试')
+    stream.handlers.onError(`请求失败：${msg}`)
   } finally {
-    clearTimer()
-    flushBuffer()
-    thinkingIds.value.delete(assistantMsg.id)
+    stream.finish()
     sending.value = false
+  }
+  await loadSessions()
+}
+
+/** 确认/拒绝后自动续聊（T5）：后端从 action 表重建上下文，流式汇报执行结果 */
+async function startResumeStream(action: ActionResp) {
+  if (!currentSessionId.value) return
+  const sessionId = currentSessionId.value
+  const stream = beginAssistantStream()
+  try {
+    await resumeStream(sessionId, action.id, stream.handlers)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    stream.handlers.onError(`续聊请求失败：${msg}`)
+  } finally {
+    stream.finish()
   }
   await loadSessions()
 }
@@ -236,7 +312,7 @@ async function handleConfirm(action: ActionResp) {
     const result = await confirmAction(action.id)
     Message.success(`执行状态：${result.status}`)
     pendingAction.value = undefined
-    await loadMessages()
+    await startResumeStream(action)
   } finally {
     acting.value = false
   }
@@ -248,7 +324,7 @@ async function handleReject(action: ActionResp) {
     const result = await rejectAction(action.id)
     Message.success(`执行状态：${result.status}`)
     pendingAction.value = undefined
-    await loadMessages()
+    await startResumeStream(action)
   } finally {
     acting.value = false
   }
@@ -321,6 +397,18 @@ onMounted(async () => {
             <div class="message-bubble">
               <div class="message-role">{{ roleText(message.role) }}</div>
               <div class="message-body">
+                <!-- 工具调用步骤（T5）：流式期间实时显示，刷新后从 metadata.toolTrace 还原 -->
+                <div v-if="toolStepsOf(message).length" class="tool-steps">
+                  <div
+                    v-for="(step, i) in toolStepsOf(message)"
+                    :key="i"
+                    class="tool-step"
+                    :data-phase="step.status"
+                  >
+                    <span class="tool-step-icon">⚙</span>
+                    <span>{{ toolStepText(step) }}</span>
+                  </div>
+                </div>
                 <div v-if="message.role === 'user'" class="message-content">{{ message.content }}</div>
                 <div v-else-if="!message.content && thinkingIds.has(message.id)" class="thinking">
                   <span class="thinking-dots"><i></i><i></i><i></i></span>
@@ -666,6 +754,58 @@ onMounted(async () => {
   padding: 4px 0;
   font-size: 13px;
   color: var(--color-text-4);
+}
+
+/* 工具调用步骤指示（T5） */
+.tool-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.tool-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--color-fill-1);
+  font-size: 12px;
+  color: var(--color-text-3);
+  line-height: 1.6;
+}
+
+.tool-step-icon {
+  display: inline-block;
+  font-style: normal;
+}
+
+.tool-step[data-phase='start'] .tool-step-icon {
+  animation: tool-spin 1.2s linear infinite;
+}
+
+.tool-step[data-phase='success'] {
+  color: rgb(var(--green-6));
+}
+
+.tool-step[data-phase='failed'] {
+  color: rgb(var(--red-6));
+}
+
+.tool-step[data-phase='pending'] {
+  color: rgb(var(--orange-6));
+}
+
+@keyframes tool-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .citation-capsules {

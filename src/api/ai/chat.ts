@@ -11,6 +11,7 @@ import type {
   KnowledgeCitation,
   SendMessageReq,
   ToolResult,
+  ToolStatus,
 } from './types'
 
 const SESSION_URL = '/ai/sessions'
@@ -34,36 +35,22 @@ export function sendMessage(sessionId: ApiId, data: SendMessageReq) {
 
 export interface StreamHandlers {
   onToken: (delta: string) => void
-  onDone: (payload: { messageId: ApiId; citations?: KnowledgeCitation[]; totalTokens?: number }) => void
+  onDone: (payload: {
+    messageId: ApiId
+    citations?: KnowledgeCitation[]
+    totalTokens?: number
+    resumedFromActionId?: ApiId
+  }) => void
   onError: (message: string) => void
   onPending?: (action: ActionResp) => void
   onToolResult?: (result: ToolResult) => void
+  /** FC 循环期间的工具调用步骤提示（T5：页面工具状态指示） */
+  onToolStatus?: (status: ToolStatus) => void
 }
 
-/**
- * 流式对话：直接 fetch 流式端点，逐行解析 SSE（event:/data:），
- * 把 token 增量回调给调用方用于逐字渲染；data 可能跨多行，按换行合并。
- */
-export async function streamMessage(
-  sessionId: ApiId,
-  data: SendMessageReq,
-  handlers: StreamHandlers,
-): Promise<void> {
-  const base = (import.meta.env.VITE_APP_BASE_API as string) || ''
-  const url = `${base}${SESSION_URL}/${sessionId}/messages/stream`
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-    },
-    body: JSON.stringify(data),
-  })
-  if (!resp.ok || !resp.body) {
-    handlers.onError(`请求失败（${resp.status}）`)
-    return
-  }
-  const reader = resp.body.getReader()
+/** 逐行解析 SSE 响应流（event:/data:），data 可能跨多行，按换行合并后分发 */
+async function parseSseStream(resp: Response, handlers: StreamHandlers): Promise<void> {
+  const reader = resp.body!.getReader()
   const decoder = new TextDecoder('utf-8')
   let buffer = ''
   let eventName = ''
@@ -93,6 +80,14 @@ export async function streamMessage(
           handlers.onToolResult(JSON.parse(payload))
         } catch {
           // ignore malformed toolResult payload
+        }
+      }
+    } else if (eventName === 'toolStatus') {
+      if (handlers.onToolStatus) {
+        try {
+          handlers.onToolStatus(JSON.parse(payload))
+        } catch {
+          // ignore malformed toolStatus payload
         }
       }
     } else if (eventName === 'error') {
@@ -125,6 +120,48 @@ export async function streamMessage(
     }
   }
   dispatch()
+}
+
+async function fetchSse(url: string, body: object, handlers: StreamHandlers): Promise<void> {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!resp.ok || !resp.body) {
+    handlers.onError(`请求失败（${resp.status}）`)
+    return
+  }
+  await parseSseStream(resp, handlers)
+}
+
+/**
+ * 流式对话：直接 fetch 流式端点，逐行解析 SSE，
+ * 把 token 增量回调给调用方用于逐字渲染。
+ */
+export async function streamMessage(
+  sessionId: ApiId,
+  data: SendMessageReq,
+  handlers: StreamHandlers,
+): Promise<void> {
+  const base = (import.meta.env.VITE_APP_BASE_API as string) || ''
+  await fetchSse(`${base}${SESSION_URL}/${sessionId}/messages/stream`, data, handlers)
+}
+
+/**
+ * 确认/拒绝后续聊（T5）：confirm/reject 成功后自动调用，
+ * 后端从 action 表重建上下文，流式产出汇报回复（token/toolStatus/done）。
+ */
+export async function resumeStream(
+  sessionId: ApiId,
+  actionId: ApiId,
+  handlers: StreamHandlers,
+): Promise<void> {
+  const base = (import.meta.env.VITE_APP_BASE_API as string) || ''
+  await fetchSse(`${base}${SESSION_URL}/${sessionId}/actions/${actionId}/resume`, {}, handlers)
 }
 
 export function confirmAction(actionId: ApiId) {

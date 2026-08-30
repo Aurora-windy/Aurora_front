@@ -161,7 +161,7 @@ async function handleSaveProvider() {
     if (providerForm.id && !payload.baseUrl) {
       delete payload.baseUrl
     }
-    if (payload.usageType === 'CHAT') {
+    if (payload.usageType === 'CHAT' || payload.usageType === 'GRAPH') {
       delete payload.embeddingDimension
       delete payload.embeddingModel
     }
@@ -317,9 +317,10 @@ onMounted(() => {
             <a-option value="CHAT">对话</a-option>
             <a-option value="BOTH">对话 + 向量</a-option>
             <a-option value="EMBEDDING">仅向量</a-option>
+            <a-option value="GRAPH">图谱抽取</a-option>
           </a-select>
         </a-form-item>
-        <template v-if="providerForm.usageType !== 'CHAT'">
+        <template v-if="providerForm.usageType === 'EMBEDDING' || providerForm.usageType === 'BOTH'">
           <a-form-item field="embeddingModel" label="向量模型">
             <a-select v-model="providerForm.embeddingModel" placeholder="选择向量模型" @change="onEmbeddingModelChange">
               <a-option v-for="opt in embeddingModelOptions" :key="opt.model" :value="opt.model">
