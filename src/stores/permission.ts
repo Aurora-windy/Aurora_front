@@ -36,6 +36,7 @@ const componentMap: Record<string, Component> = {
   'oj/submission/index': () => import('@/views/oj/submission/index.vue'),
   'oj/my-submission/index': () => import('@/views/oj/my-submission/index.vue'),
   'ai/provider/index': () => import('@/views/ai/provider/index.vue'),
+  'ai/mcp/index': () => import('@/views/ai/mcp/index.vue'),
   'ai/knowledge/index': () => import('@/views/ai/knowledge/index.vue'),
   'ai/chat/index': () => import('@/views/ai/chat/index.vue'),
   'ai/graph/index': () => import('@/views/ai/graph/index.vue'),

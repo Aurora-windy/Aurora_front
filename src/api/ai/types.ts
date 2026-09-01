@@ -78,6 +78,47 @@ export interface ProviderTestResp {
   durationMs?: number
 }
 
+export interface McpServerQuery extends PageQuery {
+  code?: string
+  name?: string
+  enabled?: number
+}
+
+export interface McpServerResp {
+  id: ApiId
+  code: string
+  name: string
+  description?: string
+  baseUrl: string
+  hasBearerToken?: boolean
+  timeoutSeconds: number
+  enabled: number
+  toolCount?: number
+  lastSyncAt?: string
+  lastError?: string
+  createTime?: string
+}
+
+export interface McpServerForm {
+  code: string
+  name: string
+  description?: string
+  baseUrl: string
+  bearerToken?: string
+  timeoutSeconds?: number
+}
+
+export interface McpServerEnabledReq {
+  enabled: number
+}
+
+export interface McpServerSyncResp {
+  success: boolean
+  toolCount?: number
+  errorMessage?: string
+  durationMs?: number
+}
+
 export interface EmbeddingConfigResp {
   id?: ApiId
   model?: string
@@ -171,6 +212,7 @@ export interface ChatSessionResp {
   status: string
   lastMessageAt?: string
   createTime?: string
+  localFilesEnabled?: boolean
 }
 
 export interface ChatSessionQuery extends PageQuery {

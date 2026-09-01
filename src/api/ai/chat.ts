@@ -29,6 +29,10 @@ export function listMessages(sessionId: ApiId) {
   return request.get<ChatMessageResp[]>(`${SESSION_URL}/${sessionId}/messages`)
 }
 
+export function setLocalFilesEnabled(sessionId: ApiId, enabled: boolean) {
+  return request.patch<boolean>(`${SESSION_URL}/${sessionId}/capabilities/local-files`, { enabled })
+}
+
 export function sendMessage(sessionId: ApiId, data: SendMessageReq) {
   return request.post<ChatSendResp>(`${SESSION_URL}/${sessionId}/messages`, data)
 }

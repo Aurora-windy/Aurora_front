@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { Message } from '@arco-design/web-vue'
-import { confirmAction, createSession, listMessages, listSessions, rejectAction, resumeStream, streamMessage } from '@/api/ai/chat'
+import { confirmAction, createSession, listMessages, listSessions, rejectAction, resumeStream, setLocalFilesEnabled, streamMessage } from '@/api/ai/chat'
 import type { StreamHandlers } from '@/api/ai/chat'
 import { listEnabledProviders } from '@/api/ai/provider'
 import { renderMarkdown } from '@/utils/markdown'
-import type { ActionResp, ChatMessageResp, ChatSessionResp, KnowledgeCitation, ProviderOptionResp, ToolResult } from '@/api/ai/types'
+import type { ActionResp, ChatMessageResp, ChatSessionResp, KnowledgeCitation, ProviderOptionResp } from '@/api/ai/types'
 
 const loadingSessions = ref(false)
 const loadingMessages = ref(false)
@@ -18,6 +18,7 @@ const currentSessionId = ref<string>()
 const selectedProviderId = ref<string>()
 const input = ref('')
 const useKnowledgeBase = ref(true)
+const localFilesEnabled = ref(false)
 const pendingAction = ref<ActionResp>()
 const citationDrawerVisible = ref(false)
 const activeCitations = ref<KnowledgeCitation[]>([])
@@ -66,7 +67,6 @@ function openCitationDrawer(message: ChatMessageResp) {
   activeCitations.value = messageCitations(message)
   citationDrawerVisible.value = true
 }
-const toolResult = ref<ToolResult>()
 
 const newSessionForm = reactive({
   title: '',
@@ -123,7 +123,20 @@ async function selectSession(sessionId: string) {
   currentSessionId.value = sessionId
   const session = sessions.value.find((item) => item.id === sessionId)
   if (session?.providerId) selectedProviderId.value = session.providerId
+  localFilesEnabled.value = session?.localFilesEnabled === true
   await loadMessages(sessionId)
+}
+
+async function handleToggleLocalFiles() {
+  if (!currentSessionId.value) return
+  const next = !localFilesEnabled.value
+  localFilesEnabled.value = next
+  try {
+    await setLocalFilesEnabled(currentSessionId.value, next)
+    Message.success(next ? '已开启本地工作区读取' : '已关闭本地工作区读取')
+  } catch {
+    localFilesEnabled.value = !next
+  }
 }
 
 async function loadMessages(sessionId = currentSessionId.value) {
@@ -131,9 +144,6 @@ async function loadMessages(sessionId = currentSessionId.value) {
   loadingMessages.value = true
   try {
     messages.value = await listMessages(sessionId)
-    const lastAssistant = [...messages.value].reverse().find((item) => item.role === 'assistant')
-    const metadata = lastAssistant ? parseMetadata(lastAssistant) : null
-    toolResult.value = metadata?.toolResult && Object.keys(metadata.toolResult).length ? metadata.toolResult : undefined
   } finally {
     loadingMessages.value = false
   }
@@ -208,9 +218,6 @@ function beginAssistantStream(): { handlers: StreamHandlers; finish: () => void 
     },
     onPending: (action) => {
       pendingAction.value = action
-    },
-    onToolResult: (result) => {
-      toolResult.value = result
     },
     onToolStatus: (status) => {
       const steps = liveSteps.get(assistantMsg.id) ?? []
@@ -404,6 +411,14 @@ onMounted(async () => {
           >
             {{ useKnowledgeBase ? '调用知识库' : '未调用知识库' }}
           </a-button>
+          <a-button
+            size="mini"
+            :type="localFilesEnabled ? 'primary' : 'secondary'"
+            :status="localFilesEnabled ? 'normal' : 'warning'"
+            @click="handleToggleLocalFiles"
+          >
+            {{ localFilesEnabled ? '本地工作区已开启' : '本地工作区已关闭' }}
+          </a-button>
         </div>
         <div class="composer-input">
           <a-textarea v-model="input" placeholder="输入问题，Enter 发送，Shift+Enter 换行" :auto-size="{ minRows: 3, maxRows: 6 }" @keydown="handleComposerKeydown" />
@@ -433,10 +448,6 @@ onMounted(async () => {
         </div>
       </a-card>
 
-      <a-card title="工具执行结果" :bordered="false">
-        <a-empty v-if="!toolResult" description="暂无工具执行结果" />
-        <a-alert v-else :type="toolResult.success ? 'success' : 'error'" :title="toolResult.summary || toolResult.errorCode || '工具执行结果'" :content="toolResult.errorMessage || JSON.stringify(toolResult.data || {})" />
-      </a-card>
     </aside>
 
     <a-drawer
