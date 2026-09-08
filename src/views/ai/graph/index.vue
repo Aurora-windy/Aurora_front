@@ -5,8 +5,8 @@
       <a-empty>
         <template #description>
           <span>
-            {{ graphInfo?.status === 'closed'
-              ? '知识图谱尚未启用（Neo4j 未配置或不可达），图谱数据来自文档上传后自动抽取的实体关系。'
+            {{ graphInfo?.status !== 'open'
+              ? (graphInfo?.databaseName || '基础设施未就绪，请检查 Neo4j 配置和容器状态。')
               : '图谱数据为空，请先上传文档。' }}
           </span>
         </template>
@@ -141,7 +141,8 @@ const graphStatusClass = computed(() => (graphReady.value ? 'open' : 'closed'))
 
 const graphStatusText = computed(() => {
   if (graphReady.value) return '已连接'
-  if (graphInfo.value?.databaseName === 'Neo4j 未启用') return '未启用'
+  if (graphInfo.value?.status === 'disabled') return '未启用'
+  if (graphInfo.value?.status === 'not_ready') return '基础设施未就绪'
   return '不可达'
 })
 
@@ -151,7 +152,7 @@ function loadInfo() {
       graphInfo.value = resp
     })
     .catch(() => {
-      graphInfo.value = { status: 'closed', databaseName: 'Neo4j 不可达', entityCount: 0, relationshipCount: 0 }
+      graphInfo.value = { status: 'not_ready', databaseName: '基础设施未就绪：Neo4j 不可达，请检查容器和连接配置', entityCount: 0, relationshipCount: 0 }
     })
 }
 
